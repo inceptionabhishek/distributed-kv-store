@@ -1,32 +1,37 @@
 #include <iostream>
+#include <thread>
+#include <vector>
 #include "kv_store.hpp"
 
 int main() {
     KVStore store;
 
-    store.put("name", "a");
-    store.put("role", "backend engineer");
+    const int num_threads = 8;
+    const int puts_per_thread = 10000;
 
-    // std::optional forces you to check before use -- there's no
-    // "garbage value" you could accidentally read, unlike a raw
-    // out-param or a sentinel string like "".
-    if (auto val = store.get("name")) {
-        std::cout << "name -> " << *val << std::endl;
+    std::vector<std::thread> threads;
+
+    for (int t = 0; t < num_threads; ++t) {
+        threads.emplace_back([&store, t, puts_per_thread]() {
+            for (int i = 0; i < puts_per_thread; ++i) {
+                std::string key = "thread" + std::to_string(t) + "_key" + std::to_string(i);
+                store.put(key, "value" + std::to_string(i));
+            }
+        });
     }
 
-    if (auto val = store.get("role")) {
-        std::cout << "role -> " << *val << std::endl;
+    for (auto& th : threads) {
+        th.join();
     }
 
-    std::cout << "size -> " << store.size() << std::endl;
+    size_t expected = static_cast<size_t>(num_threads) * puts_per_thread;
+    std::cout << "expected size -> " << expected << std::endl;
+    std::cout << "actual size   -> " << store.size() << std::endl;
 
-    bool removed = store.remove("role");
-    std::cout << "removed role? " << removed << std::endl;
-    std::cout << "size after remove -> " << store.size() << std::endl;
-
-    auto missing = store.get("role");
-    if (!missing.has_value()) {
-        std::cout << "role is a miss, as expected" << std::endl;
+    if (store.size() == expected) {
+        std::cout << "PASS: no lost writes under concurrent access" << std::endl;
+    } else {
+        std::cout << "FAIL: writes were lost" << std::endl;
     }
 
     return 0;
