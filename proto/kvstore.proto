@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package kvstore;
+
+// Note: unlike in-process KVStore which uses std::optional<string>,
+// RPC messages can't carry an "empty/absent" state implicitly the same way.
+// So GetResponse explicitly separates "found" (bool) from "value" (string) --
+// this is the same sentinel-style pattern we chose earlier, just made
+// explicit because it has to cross the network.
+message PutRequest {
+    string key = 1;
+    string value = 2;
+}
+
+message PutResponse {
+    bool success = 1;
+}
+
+message GetRequest {
+    string key = 1;
+}
+
+message GetResponse {
+    bool found = 1;
+    string value = 2;
+}
+
+message RemoveRequest {
+    string key = 1;
+}
+
+message RemoveResponse {
+    bool removed = 1;
+}
+
+service KVStoreService {
+    rpc Put(PutRequest) returns (PutResponse);
+    rpc Get(GetRequest) returns (GetResponse);
+    rpc Remove(RemoveRequest) returns (RemoveResponse);
+}
