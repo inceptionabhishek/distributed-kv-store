@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <cstdlib>
 
 #include <grpcpp/grpcpp.h>
 #include "kvstore.grpc.pb.h"
@@ -19,11 +20,6 @@ using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
 
-// This class is the network-facing adapter. Notice it doesn't reimplement
-// any storage logic -- it just translates gRPC calls into calls on the
-// KVStore we already built and tested in Stage 1. That separation matters:
-// KVStore has zero knowledge that gRPC exists, so we can unit-test it
-// without ever spinning up a server or a socket.
 class KVStoreServiceImpl final : public KVStoreService::Service {
 public:
     Status Put(ServerContext* context, const PutRequest* request,
@@ -56,8 +52,7 @@ private:
     KVStore store_;
 };
 
-void RunServer() {
-    std::string server_address("0.0.0.0:50051");
+void RunServer(const std::string& server_address) {
     KVStoreServiceImpl service;
 
     ServerBuilder builder;
@@ -66,10 +61,16 @@ void RunServer() {
 
     std::unique_ptr<Server> server(builder.BuildAndStart());
     std::cout << "KV server listening on " << server_address << std::endl;
-    server->Wait();   // blocks here, handling requests, until the process is killed
+    server->Wait();
 }
 
-int main() {
-    RunServer();
+int main(int argc, char** argv) {
+    // Usage: ./kv_server [port]   (defaults to 50051 if not given)
+    int port = 50051;
+    if (argc > 1) {
+        port = std::atoi(argv[1]);
+    }
+    std::string server_address = "0.0.0.0:" + std::to_string(port);
+    RunServer(server_address);
     return 0;
 }

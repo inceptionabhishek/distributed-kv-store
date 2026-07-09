@@ -48,3 +48,8 @@ target_link_libraries(kv_server PRIVATE kv_core kvstore_proto gRPC::grpc++ proto
 
 add_executable(kv_client src/client.cpp)
 target_link_libraries(kv_client PRIVATE kvstore_proto gRPC::grpc++ protobuf::libprotobuf Threads::Threads)
+
+
+# --- Router (Stage 3: hash(key) % N across multiple nodes) ---
+add_executable(kv_router src/router.cpp)
+target_link_libraries(kv_router PRIVATE kvstore_proto gRPC::grpc++ protobuf::libprotobuf Threads::Threads)
