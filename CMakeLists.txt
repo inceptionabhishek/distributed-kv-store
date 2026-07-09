@@ -53,3 +53,6 @@ target_link_libraries(kv_client PRIVATE kvstore_proto gRPC::grpc++ protobuf::lib
 # --- Router (Stage 3: hash(key) % N across multiple nodes) ---
 add_executable(kv_router src/router.cpp)
 target_link_libraries(kv_router PRIVATE kvstore_proto gRPC::grpc++ protobuf::libprotobuf Threads::Threads)
+
+# --- Ring demo (Stage 4: proves consistent hashing moves far fewer keys) ---
+add_executable(ring_demo src/ring_demo.cpp)
