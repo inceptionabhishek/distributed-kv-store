@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <algorithm>
 
 #include "simple_hash.hpp"
 
@@ -33,7 +34,7 @@ public:
         physical_nodes_.erase(node_address);
     }
 
-    // Returns which physical node owns this key.
+    // Returns which physical node owns this key (the "primary").
     std::string GetNodeForKey(const std::string& key) const {
         if (ring_.empty()) {
             return "";
@@ -45,6 +46,38 @@ public:
             it = ring_.begin();
         }
         return it->second;
+    }
+
+    // Returns up to `replication_factor` DISTINCT physical nodes for this
+    // key, walking clockwise around the ring starting from the key's
+    // position. The first entry equals GetNodeForKey() -- the primary
+    // owner -- and the rest are its ring successors, which is where
+    // replicas live.
+    std::vector<std::string> GetNodesForKey(const std::string& key, int replication_factor) const {
+        std::vector<std::string> result;
+        if (ring_.empty() || replication_factor <= 0) {
+            return result;
+        }
+
+        uint64_t key_hash = ring_hash(key);
+        auto it = ring_.lower_bound(key_hash);
+
+        size_t attempts = 0;
+        size_t max_attempts = ring_.size();
+
+        while (result.size() < static_cast<size_t>(replication_factor) && attempts < max_attempts) {
+            if (it == ring_.end()) {
+                it = ring_.begin();
+            }
+            const std::string& candidate = it->second;
+            if (std::find(result.begin(), result.end(), candidate) == result.end()) {
+                result.push_back(candidate);
+            }
+            ++it;
+            ++attempts;
+        }
+
+        return result;
     }
 
     size_t NodeCount() const { return physical_nodes_.size(); }

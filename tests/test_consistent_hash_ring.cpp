@@ -151,3 +151,47 @@ TEST(ConsistentHashRingTest, LoadIsReasonablyBalancedAcrossNodes) {
         EXPECT_LT(fraction, 0.55) << node << " got too many keys";
     }
 }
+
+
+
+// --- GetNodesForKey: replication support ---
+
+TEST(ConsistentHashRingTest, GetNodesForKeyReturnsDistinctNodes) {
+    ConsistentHashRing ring(10);
+    ring.AddNode("node0");
+    ring.AddNode("node1");
+    ring.AddNode("node2");
+
+    auto nodes = ring.GetNodesForKey("some_key", 3);
+    ASSERT_EQ(nodes.size(), 3u);
+
+    std::unordered_set<std::string> distinct(nodes.begin(), nodes.end());
+    EXPECT_EQ(distinct.size(), 3u) << "GetNodesForKey returned duplicate nodes";
+}
+
+TEST(ConsistentHashRingTest, GetNodesForKeyFirstEntryMatchesGetNodeForKey) {
+    ConsistentHashRing ring(10);
+    ring.AddNode("node0");
+    ring.AddNode("node1");
+    ring.AddNode("node2");
+
+    std::string primary = ring.GetNodeForKey("some_key");
+    auto nodes = ring.GetNodesForKey("some_key", 3);
+    ASSERT_FALSE(nodes.empty());
+    EXPECT_EQ(nodes[0], primary);
+}
+
+TEST(ConsistentHashRingTest, GetNodesForKeyCapsAtAvailableNodeCount) {
+    ConsistentHashRing ring(10);
+    ring.AddNode("node0");
+    ring.AddNode("node1");
+
+    auto nodes = ring.GetNodesForKey("some_key", 3);
+    EXPECT_EQ(nodes.size(), 2u);
+}
+
+TEST(ConsistentHashRingTest, GetNodesForKeyOnEmptyRingReturnsEmpty) {
+    ConsistentHashRing ring(10);
+    auto nodes = ring.GetNodesForKey("some_key", 3);
+    EXPECT_TRUE(nodes.empty());
+}
