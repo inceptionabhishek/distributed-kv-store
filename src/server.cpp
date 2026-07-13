@@ -24,17 +24,18 @@ class KVStoreServiceImpl final : public KVStoreService::Service {
 public:
     Status Put(ServerContext* context, const PutRequest* request,
                PutResponse* response) override {
-        store_.put(request->key(), request->value());
+        store_.put(request->key(), request->value(), request->timestamp());
         response->set_success(true);
         return Status::OK;
     }
 
     Status Get(ServerContext* context, const GetRequest* request,
                GetResponse* response) override {
-        auto value = store_.get(request->key());
-        if (value.has_value()) {
+        auto result = store_.get(request->key());
+        if (result.has_value()) {
             response->set_found(true);
-            response->set_value(*value);
+            response->set_value(result->value);
+            response->set_timestamp(result->timestamp);
         } else {
             response->set_found(false);
         }
@@ -65,7 +66,6 @@ void RunServer(const std::string& server_address) {
 }
 
 int main(int argc, char** argv) {
-    // Usage: ./kv_server [port]   (defaults to 50051 if not given)
     int port = 50051;
     if (argc > 1) {
         port = std::atoi(argv[1]);

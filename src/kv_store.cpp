@@ -1,11 +1,15 @@
 #include "kv_store.hpp"
 
-void KVStore::put(const std::string& key, const std::string& value) {
-    std::lock_guard<std::mutex> lock(mutex_);   // released automatically when lock goes out of scope
-    data_[key] = value;
+void KVStore::put(const std::string& key, const std::string& value, uint64_t timestamp) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = data_.find(key);
+    if (it == data_.end() || timestamp >= it->second.timestamp) {
+        data_[key] = TimestampedValue{value, timestamp};
+    }
+    // else: an older write arrived late -- silently ignored, last-write-wins.
 }
 
-std::optional<std::string> KVStore::get(const std::string& key) const {
+std::optional<TimestampedValue> KVStore::get(const std::string& key) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = data_.find(key);
     if (it == data_.end()) {

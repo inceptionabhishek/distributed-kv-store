@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include <grpcpp/grpcpp.h>
 #include "kvstore.grpc.pb.h"
@@ -17,6 +18,11 @@ using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
 
+uint64_t NowMillis() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
 class KVStoreClient {
 public:
     KVStoreClient(std::shared_ptr<Channel> channel)
@@ -26,6 +32,7 @@ public:
         PutRequest request;
         request.set_key(key);
         request.set_value(value);
+        request.set_timestamp(NowMillis());
 
         PutResponse response;
         ClientContext context;

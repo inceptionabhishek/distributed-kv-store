@@ -2,14 +2,10 @@ syntax = "proto3";
 
 package kvstore;
 
-// Note: unlike in-process KVStore which uses std::optional<string>,
-// RPC messages can't carry an "empty/absent" state implicitly the same way.
-// So GetResponse explicitly separates "found" (bool) from "value" (string) --
-// this is the same sentinel-style pattern we chose earlier, just made
-// explicit because it has to cross the network.
 message PutRequest {
     string key = 1;
     string value = 2;
+    uint64 timestamp = 3;   // client-assigned write time, used for last-write-wins conflict resolution
 }
 
 message PutResponse {
@@ -23,6 +19,7 @@ message GetRequest {
 message GetResponse {
     bool found = 1;
     string value = 2;
+    uint64 timestamp = 3;   // lets the router compare answers from multiple replicas and pick the newest
 }
 
 message RemoveRequest {

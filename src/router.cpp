@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <chrono>
 
 #include <grpcpp/grpcpp.h>
 #include "kvstore.grpc.pb.h"
@@ -20,22 +21,25 @@ using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
 
-// Stage 5: replication. Put now writes to REPLICATION_FACTOR nodes (the
-// key's primary owner plus its ring successors) and only reports success
-// if ALL of them acknowledge. Get, for now, still reads from just the
-// primary -- we are not yet handling "what if replicas disagree", that's
-// Stage 6's problem (quorum reads/writes + conflict resolution).
-//
-// Also notice the failure mode this creates on purpose: if ANY one of
-// the 3 replicas is down, Put fails entirely, even though 2 of 3 copies
-// are healthy. That's the real cost of "wait for all" replication --
-// full consistency, poor availability. Quorum (Stage 6) is the fix.
+// Stage 6: quorum reads/writes. With N=3 replicas, we use W=2 and R=2
+// (W + R = 4 > N = 3). That inequality is the whole point: it
+// guarantees any successful read's set of R replicas MUST overlap with
+// any prior successful write's set of W replicas on at least one node --
+// so a read can never completely miss the latest write. That's what
+// "quorum" buys you over Stage 5's wait-for-all: you can tolerate ONE
+// node being down and still serve both reads and writes correctly,
+// instead of Stage 5 where any one dead replica blocked everything.
 class Router {
 public:
     explicit Router(const std::vector<std::string>& node_addresses,
                      int virtual_nodes = 10,
-                     int replication_factor = 3)
-        : ring_(virtual_nodes), replication_factor_(replication_factor) {
+                     int replication_factor = 3,
+                     int write_quorum = 2,
+                     int read_quorum = 2)
+        : ring_(virtual_nodes),
+          replication_factor_(replication_factor),
+          write_quorum_(write_quorum),
+          read_quorum_(read_quorum) {
         for (const auto& addr : node_addresses) {
             ring_.AddNode(addr);
             stubs_[addr] = KVStoreService::NewStub(
@@ -49,63 +53,108 @@ public:
 
     bool Put(const std::string& key, const std::string& value) {
         auto replicas = ReplicaAddressesFor(key);
-        if (replicas.empty()) {
-            std::cerr << "Put failed for key '" << key << "': no nodes in ring" << std::endl;
+        if (static_cast<int>(replicas.size()) < write_quorum_) {
+            std::cerr << "Put failed for key '" << key << "': not enough nodes for write quorum "
+                      << "(need " << write_quorum_ << ", have " << replicas.size() << ")" << std::endl;
             return false;
         }
 
-        std::cout << "PUT   " << key << " -> replicas: [";
+        uint64_t timestamp = NowMillis();
+
+        std::cout << "PUT   " << key << " (ts=" << timestamp << ") -> replicas: [";
         for (size_t i = 0; i < replicas.size(); ++i) {
             std::cout << replicas[i] << (i + 1 < replicas.size() ? ", " : "");
         }
         std::cout << "]" << std::endl;
 
+        int successes = 0;
         for (const auto& addr : replicas) {
             PutRequest request;
             request.set_key(key);
             request.set_value(value);
+            request.set_timestamp(timestamp);
             PutResponse response;
             ClientContext context;
 
             Status status = stubs_[addr]->Put(&context, request, &response);
-            if (!status.ok() || !response.success()) {
+            if (status.ok() && response.success()) {
+                successes++;
+            } else {
                 std::cerr << "  Put to replica " << addr << " FAILED: "
                           << status.error_message() << std::endl;
-                return false;
             }
         }
-        return true;
+
+        bool ok = successes >= write_quorum_;
+        std::cout << "  " << successes << "/" << replicas.size() << " replicas acked "
+                   << "(needed " << write_quorum_ << ") -> "
+                   << (ok ? "SUCCESS" : "FAILED") << std::endl;
+        return ok;
     }
 
     bool Get(const std::string& key, std::string* out_value) {
         auto replicas = ReplicaAddressesFor(key);
-        if (replicas.empty()) {
+        if (static_cast<int>(replicas.size()) < read_quorum_) {
+            std::cerr << "Get failed for key '" << key << "': not enough nodes for read quorum"
+                      << std::endl;
             return false;
         }
-        const std::string& primary = replicas[0];
 
-        GetRequest request;
-        request.set_key(key);
-        GetResponse response;
-        ClientContext context;
+        struct Reply { bool found; std::string value; uint64_t timestamp; };
+        std::vector<Reply> replies;
 
-        Status status = stubs_[primary]->Get(&context, request, &response);
-        if (!status.ok()) {
-            std::cerr << "Get failed for key '" << key << "' from primary " << primary
-                      << ": " << status.error_message() << std::endl;
+        for (const auto& addr : replicas) {
+            GetRequest request;
+            request.set_key(key);
+            GetResponse response;
+            ClientContext context;
+
+            Status status = stubs_[addr]->Get(&context, request, &response);
+            if (!status.ok()) {
+                std::cerr << "  Get from replica " << addr << " FAILED: "
+                          << status.error_message() << std::endl;
+                continue;
+            }
+            replies.push_back({response.found(), response.value(), response.timestamp()});
+            if (static_cast<int>(replies.size()) >= read_quorum_) {
+                break;
+            }
+        }
+
+        if (static_cast<int>(replies.size()) < read_quorum_) {
+            std::cerr << "Get failed for key '" << key << "': only got "
+                      << replies.size() << "/" << read_quorum_ << " needed replies" << std::endl;
             return false;
         }
-        std::cout << "GET   " << key << " -> primary " << primary
-                   << " (found=" << response.found() << ")" << std::endl;
-        if (response.found()) {
-            *out_value = response.value();
+
+        const Reply* best = nullptr;
+        for (const auto& r : replies) {
+            if (!r.found) continue;
+            if (best == nullptr || r.timestamp > best->timestamp) {
+                best = &r;
+            }
         }
-        return response.found();
+
+        std::cout << "GET   " << key << " -> queried " << replies.size()
+                   << " replicas (needed " << read_quorum_ << ")" << std::endl;
+
+        if (best == nullptr) {
+            return false;
+        }
+        *out_value = best->value;
+        return true;
     }
 
 private:
+    static uint64_t NowMillis() {
+        using namespace std::chrono;
+        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    }
+
     ConsistentHashRing ring_;
     int replication_factor_;
+    int write_quorum_;
+    int read_quorum_;
     std::unordered_map<std::string, std::unique_ptr<KVStoreService::Stub>> stubs_;
 };
 
@@ -117,7 +166,8 @@ int main() {
         "localhost:50054"
     };
 
-    Router router(nodes, /*virtual_nodes=*/10, /*replication_factor=*/3);
+    Router router(nodes, /*virtual_nodes=*/10, /*replication_factor=*/3,
+                  /*write_quorum=*/2, /*read_quorum=*/2);
 
     std::vector<std::pair<std::string, std::string>> data = {
         {"user:1", "abhishek"},
@@ -130,7 +180,7 @@ int main() {
         {"order:102", "delivered"},
     };
 
-    std::cout << "--- writing (replicated to 3 nodes each) ---" << std::endl;
+    std::cout << "--- writing (quorum W=2 of 3 replicas) ---" << std::endl;
     int put_failures = 0;
     for (const auto& [key, value] : data) {
         if (!router.Put(key, value)) {
@@ -138,7 +188,7 @@ int main() {
         }
     }
 
-    std::cout << "\n--- reading back (from primary only) ---" << std::endl;
+    std::cout << "\n--- reading back (quorum R=2 of 3 replicas) ---" << std::endl;
     int mismatches = 0;
     for (const auto& [key, expected_value] : data) {
         std::string actual_value;
@@ -151,7 +201,7 @@ int main() {
 
     std::cout << "\nput_failures=" << put_failures << " mismatches=" << mismatches << std::endl;
     std::cout << (put_failures == 0 && mismatches == 0
-                  ? "PASS: all keys replicated and retrieved correctly"
+                  ? "PASS: quorum reads/writes succeeded despite any single node being down"
                   : "FAIL") << std::endl;
 
     return 0;

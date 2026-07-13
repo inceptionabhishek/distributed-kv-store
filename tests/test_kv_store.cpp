@@ -3,8 +3,6 @@
 #include <vector>
 #include "kv_store.hpp"
 
-// --- Basic put/get behavior ---
-
 TEST(KVStoreTest, GetOnEmptyStoreReturnsNullopt) {
     KVStore store;
     EXPECT_EQ(store.get("missing"), std::nullopt);
@@ -12,36 +10,53 @@ TEST(KVStoreTest, GetOnEmptyStoreReturnsNullopt) {
 
 TEST(KVStoreTest, PutThenGetReturnsValue) {
     KVStore store;
-    store.put("key1", "value1");
+    store.put("key1", "value1", 100);
     auto result = store.get("key1");
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(*result, "value1");
+    EXPECT_EQ(result->value, "value1");
+    EXPECT_EQ(result->timestamp, 100u);
 }
 
-TEST(KVStoreTest, PutOverwritesExistingKey) {
+TEST(KVStoreTest, NewerTimestampOverwritesOlder) {
     KVStore store;
-    store.put("key1", "first");
-    store.put("key1", "second");
+    store.put("key1", "first", 100);
+    store.put("key1", "second", 200);
     auto result = store.get("key1");
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(*result, "second");
+    EXPECT_EQ(result->value, "second");
+    EXPECT_EQ(result->timestamp, 200u);
+}
+
+TEST(KVStoreTest, OlderTimestampArrivingLateIsIgnored) {
+    KVStore store;
+    store.put("key1", "newer_value", 200);
+    store.put("key1", "stale_late_arrival", 100);
+    auto result = store.get("key1");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->value, "newer_value");
+    EXPECT_EQ(result->timestamp, 200u);
+}
+
+TEST(KVStoreTest, EqualTimestampOverwrites) {
+    KVStore store;
+    store.put("key1", "first", 100);
+    store.put("key1", "second", 100);
+    auto result = store.get("key1");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->value, "second");
 }
 
 TEST(KVStoreTest, PutEmptyStringValueIsDistinctFromMissing) {
-    // Edge case: an empty string is a valid value, not the same as "not found".
-    // This is exactly why we use std::optional instead of "" as a sentinel.
     KVStore store;
-    store.put("key1", "");
+    store.put("key1", "", 100);
     auto result = store.get("key1");
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(*result, "");
+    EXPECT_EQ(result->value, "");
 }
-
-// --- remove() ---
 
 TEST(KVStoreTest, RemoveExistingKeyReturnsTrue) {
     KVStore store;
-    store.put("key1", "value1");
+    store.put("key1", "value1", 100);
     EXPECT_TRUE(store.remove("key1"));
     EXPECT_EQ(store.get("key1"), std::nullopt);
 }
@@ -52,21 +67,17 @@ TEST(KVStoreTest, RemoveMissingKeyReturnsFalse) {
 }
 
 TEST(KVStoreTest, RemoveIsIdempotent) {
-    // Removing the same key twice shouldn't throw or corrupt state --
-    // the second remove is just a no-op that reports false.
     KVStore store;
-    store.put("key1", "value1");
+    store.put("key1", "value1", 100);
     EXPECT_TRUE(store.remove("key1"));
     EXPECT_FALSE(store.remove("key1"));
 }
 
-// --- size() ---
-
 TEST(KVStoreTest, SizeReflectsPutsAndRemoves) {
     KVStore store;
     EXPECT_EQ(store.size(), 0u);
-    store.put("a", "1");
-    store.put("b", "2");
+    store.put("a", "1", 100);
+    store.put("b", "2", 100);
     EXPECT_EQ(store.size(), 2u);
     store.remove("a");
     EXPECT_EQ(store.size(), 1u);
@@ -74,12 +85,10 @@ TEST(KVStoreTest, SizeReflectsPutsAndRemoves) {
 
 TEST(KVStoreTest, OverwritingDoesNotChangeSize) {
     KVStore store;
-    store.put("a", "1");
-    store.put("a", "2");   // same key, different value
+    store.put("a", "1", 100);
+    store.put("a", "2", 200);
     EXPECT_EQ(store.size(), 1u);
 }
-
-// --- Concurrency: the actual reason the mutex exists ---
 
 TEST(KVStoreTest, ConcurrentPutsAllSucceedWithNoLostWrites) {
     KVStore store;
@@ -91,7 +100,7 @@ TEST(KVStoreTest, ConcurrentPutsAllSucceedWithNoLostWrites) {
         threads.emplace_back([&store, t, puts_per_thread]() {
             for (int i = 0; i < puts_per_thread; ++i) {
                 std::string key = "t" + std::to_string(t) + "_k" + std::to_string(i);
-                store.put(key, "v" + std::to_string(i));
+                store.put(key, "v" + std::to_string(i), static_cast<uint64_t>(i));
             }
         });
     }
@@ -101,17 +110,14 @@ TEST(KVStoreTest, ConcurrentPutsAllSucceedWithNoLostWrites) {
 }
 
 TEST(KVStoreTest, ConcurrentReadsAndWritesOnSameKeyDoNotCrash) {
-    // This test's assertion is weak (just checks it eventually holds one
-    // of the written values) -- the real point is that it must not crash
-    // or hang under TSan/ASan. Run with sanitizers occasionally to be sure.
     KVStore store;
-    store.put("shared_key", "initial");
+    store.put("shared_key", "initial", 0);
 
     std::vector<std::thread> threads;
     for (int t = 0; t < 4; ++t) {
         threads.emplace_back([&store, t]() {
             for (int i = 0; i < 1000; ++i) {
-                store.put("shared_key", "writer" + std::to_string(t));
+                store.put("shared_key", "writer" + std::to_string(t), static_cast<uint64_t>(i));
                 (void)store.get("shared_key");
             }
         });
