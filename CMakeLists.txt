@@ -50,9 +50,23 @@ add_executable(kv_client src/client.cpp)
 target_link_libraries(kv_client PRIVATE kvstore_proto gRPC::grpc++ protobuf::libprotobuf Threads::Threads)
 
 
-# --- Router (Stage 3: hash(key) % N across multiple nodes) ---
+# --- Router (Stage 3/4: hash(key) % N and consistent hashing across nodes) ---
 add_executable(kv_router src/router.cpp)
 target_link_libraries(kv_router PRIVATE kvstore_proto gRPC::grpc++ protobuf::libprotobuf Threads::Threads)
+
+# --- Unit tests (GoogleTest) ---
+enable_testing()
+find_package(GTest REQUIRED)
+
+add_executable(kv_tests
+    tests/test_kv_store.cpp
+    tests/test_consistent_hash_ring.cpp
+    src/kv_store.cpp
+)
+target_link_libraries(kv_tests PRIVATE GTest::gtest GTest::gtest_main Threads::Threads)
+
+include(GoogleTest)
+gtest_discover_tests(kv_tests)
 
 # --- Ring demo (Stage 4: proves consistent hashing moves far fewer keys) ---
 add_executable(ring_demo src/ring_demo.cpp)

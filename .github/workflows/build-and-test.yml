@@ -1,0 +1,41 @@
+name: Build and Test
+
+# Runs on every push and every pull request targeting main.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # GitHub's Ubuntu runners don't have gRPC/protobuf/gtest preinstalled,
+      # so we install them via apt, same as we'd do on any fresh Linux box.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            build-essential \
+            libgrpc++-dev \
+            protobuf-compiler-grpc \
+            libprotobuf-dev \
+            protobuf-compiler \
+            libgtest-dev \
+            pkg-config
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit tests
+        working-directory: build
+        run: ctest --output-on-failure
