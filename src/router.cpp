@@ -2,10 +2,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include <grpcpp/grpcpp.h>
 #include "kvstore.grpc.pb.h"
-#include "simple_hash.hpp"
+#include "consistent_hash_ring.hpp"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -19,56 +20,58 @@ using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
 
-// The router holds one stub per storage node, and picks which stub
-// to use for a given key via hash(key) % N. This is deliberately the
-// naive scheme -- we'll replace this exact function body with
-// consistent hashing in Stage 4, and nothing else about the router
-// will need to change. Notice that fact once we get there.
+// The router now delegates "which node owns this key" entirely to the
+// ConsistentHashRing. Compare this class to the Stage 3 version --
+// every method's *body* is unchanged except NodeAddressFor(). That's
+// the point: consistent hashing is a drop-in replacement for the
+// routing decision, not a redesign of the router itself.
 class Router {
 public:
-    explicit Router(const std::vector<std::string>& node_addresses) {
+    explicit Router(const std::vector<std::string>& node_addresses, int virtual_nodes = 10)
+        : ring_(virtual_nodes) {
         for (const auto& addr : node_addresses) {
-            auto channel = grpc::CreateChannel(addr, grpc::InsecureChannelCredentials());
-            stubs_.push_back(KVStoreService::NewStub(channel));
+            ring_.AddNode(addr);
+            stubs_[addr] = KVStoreService::NewStub(
+                grpc::CreateChannel(addr, grpc::InsecureChannelCredentials()));
         }
     }
 
-    size_t NodeIndexFor(const std::string& key) const {
-        return fnv1a_hash(key) % stubs_.size();
+    std::string NodeAddressFor(const std::string& key) const {
+        return ring_.GetNodeForKey(key);
     }
 
     bool Put(const std::string& key, const std::string& value) {
-        size_t idx = NodeIndexFor(key);
+        std::string addr = NodeAddressFor(key);
         PutRequest request;
         request.set_key(key);
         request.set_value(value);
         PutResponse response;
         ClientContext context;
 
-        Status status = stubs_[idx]->Put(&context, request, &response);
+        Status status = stubs_[addr]->Put(&context, request, &response);
         if (!status.ok()) {
             std::cerr << "Put failed for key '" << key << "': "
                       << status.error_message() << std::endl;
             return false;
         }
-        std::cout << "PUT   " << key << " -> node " << idx << std::endl;
+        std::cout << "PUT   " << key << " -> " << addr << std::endl;
         return response.success();
     }
 
     bool Get(const std::string& key, std::string* out_value) {
-        size_t idx = NodeIndexFor(key);
+        std::string addr = NodeAddressFor(key);
         GetRequest request;
         request.set_key(key);
         GetResponse response;
         ClientContext context;
 
-        Status status = stubs_[idx]->Get(&context, request, &response);
+        Status status = stubs_[addr]->Get(&context, request, &response);
         if (!status.ok()) {
             std::cerr << "Get failed for key '" << key << "': "
                       << status.error_message() << std::endl;
             return false;
         }
-        std::cout << "GET   " << key << " -> node " << idx
+        std::cout << "GET   " << key << " -> " << addr
                    << " (found=" << response.found() << ")" << std::endl;
         if (response.found()) {
             *out_value = response.value();
@@ -77,11 +80,11 @@ public:
     }
 
 private:
-    std::vector<std::unique_ptr<KVStoreService::Stub>> stubs_;
+    ConsistentHashRing ring_;
+    std::unordered_map<std::string, std::unique_ptr<KVStoreService::Stub>> stubs_;
 };
 
 int main() {
-    // Three storage nodes, expected to already be running.
     std::vector<std::string> nodes = {
         "localhost:50051",
         "localhost:50052",
@@ -89,7 +92,7 @@ int main() {
         "localhost:50054",
     };
 
-    Router router(nodes);
+    Router router(nodes, 10);
 
     std::vector<std::pair<std::string, std::string>> data = {
         {"user:1", "abhishek"},
