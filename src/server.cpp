@@ -19,6 +19,8 @@ using kvstore::GetRequest;
 using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
+using kvstore::PingRequest;
+using kvstore::PingResponse;
 
 class KVStoreServiceImpl final : public KVStoreService::Service {
 public:
@@ -46,6 +48,12 @@ public:
                   RemoveResponse* response) override {
         bool removed = store_.remove(request->key());
         response->set_removed(removed);
+        return Status::OK;
+    }
+
+    Status Ping(ServerContext* context, const PingRequest* request,
+                PingResponse* response) override {
+        response->set_alive(true);
         return Status::OK;
     }
 

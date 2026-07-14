@@ -5,7 +5,7 @@ package kvstore;
 message PutRequest {
     string key = 1;
     string value = 2;
-    uint64 timestamp = 3;   // client-assigned write time, used for last-write-wins conflict resolution
+    uint64 timestamp = 3;
 }
 
 message PutResponse {
@@ -19,7 +19,7 @@ message GetRequest {
 message GetResponse {
     bool found = 1;
     string value = 2;
-    uint64 timestamp = 3;   // lets the router compare answers from multiple replicas and pick the newest
+    uint64 timestamp = 3;
 }
 
 message RemoveRequest {
@@ -30,8 +30,15 @@ message RemoveResponse {
     bool removed = 1;
 }
 
+// Stage 7: a trivial RPC used purely for liveness checking.
+message PingRequest {}
+message PingResponse {
+    bool alive = 1;
+}
+
 service KVStoreService {
     rpc Put(PutRequest) returns (PutResponse);
     rpc Get(GetRequest) returns (GetResponse);
     rpc Remove(RemoveRequest) returns (RemoveResponse);
+    rpc Ping(PingRequest) returns (PingResponse);
 }

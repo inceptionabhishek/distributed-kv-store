@@ -79,6 +79,11 @@ target_link_libraries(kv_client PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB
 add_executable(kv_router src/router.cpp)
 target_link_libraries(kv_router PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} Threads::Threads)
 
+
+# --- Failure detector demo (Stage 7) ---
+add_executable(fd_demo src/fd_demo.cpp)
+target_link_libraries(fd_demo PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} Threads::Threads)
+
 # --- Unit tests (GoogleTest) ---
 enable_testing()
 find_package(GTest REQUIRED)

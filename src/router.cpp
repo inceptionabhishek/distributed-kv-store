@@ -4,10 +4,13 @@
 #include <vector>
 #include <unordered_map>
 #include <chrono>
+#include <mutex>
+#include <thread>
 
 #include <grpcpp/grpcpp.h>
 #include "kvstore.grpc.pb.h"
 #include "consistent_hash_ring.hpp"
+#include "failure_detector.hpp"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -21,14 +24,20 @@ using kvstore::GetResponse;
 using kvstore::RemoveRequest;
 using kvstore::RemoveResponse;
 
-// Stage 6: quorum reads/writes. With N=3 replicas, we use W=2 and R=2
-// (W + R = 4 > N = 3). That inequality is the whole point: it
-// guarantees any successful read's set of R replicas MUST overlap with
-// any prior successful write's set of W replicas on at least one node --
-// so a read can never completely miss the latest write. That's what
-// "quorum" buys you over Stage 5's wait-for-all: you can tolerate ONE
-// node being down and still serve both reads and writes correctly,
-// instead of Stage 5 where any one dead replica blocked everything.
+// A write meant for a node that was down at the time. Kept in memory
+// until that node comes back, then replayed and discarded. This is a
+// simplified, router-side version of "hinted handoff" -- real systems
+// (e.g. Cassandra) store hints on ANOTHER live replica rather than on
+// the coordinator itself, so the hint survives even if the coordinator
+// process dies. Our version doesn't survive a router crash; that's a
+// known, deliberate simplification for teaching purposes.
+struct Hint {
+    std::string key;
+    std::string value;
+    uint64_t timestamp;
+    std::string intended_node;
+};
+
 class Router {
 public:
     explicit Router(const std::vector<std::string>& node_addresses,
@@ -39,12 +48,18 @@ public:
         : ring_(virtual_nodes),
           replication_factor_(replication_factor),
           write_quorum_(write_quorum),
-          read_quorum_(read_quorum) {
+          read_quorum_(read_quorum),
+          failure_detector_(node_addresses) {
         for (const auto& addr : node_addresses) {
             ring_.AddNode(addr);
             stubs_[addr] = KVStoreService::NewStub(
                 grpc::CreateChannel(addr, grpc::InsecureChannelCredentials()));
         }
+        failure_detector_.Start();
+    }
+
+    ~Router() {
+        failure_detector_.Stop();
     }
 
     std::vector<std::string> ReplicaAddressesFor(const std::string& key) const {
@@ -54,8 +69,8 @@ public:
     bool Put(const std::string& key, const std::string& value) {
         auto replicas = ReplicaAddressesFor(key);
         if (static_cast<int>(replicas.size()) < write_quorum_) {
-            std::cerr << "Put failed for key '" << key << "': not enough nodes for write quorum "
-                      << "(need " << write_quorum_ << ", have " << replicas.size() << ")" << std::endl;
+            std::cerr << "Put failed for key '" << key << "': not enough nodes for write quorum"
+                      << std::endl;
             return false;
         }
 
@@ -69,6 +84,12 @@ public:
 
         int successes = 0;
         for (const auto& addr : replicas) {
+            if (!failure_detector_.IsAlive(addr)) {
+                std::cout << "  " << addr << " known DOWN, skipping RPC, storing hint" << std::endl;
+                StoreHint(addr, {key, value, timestamp, addr});
+                continue;
+            }
+
             PutRequest request;
             request.set_key(key);
             request.set_value(value);
@@ -81,7 +102,8 @@ public:
                 successes++;
             } else {
                 std::cerr << "  Put to replica " << addr << " FAILED: "
-                          << status.error_message() << std::endl;
+                          << status.error_message() << " -- storing hint" << std::endl;
+                StoreHint(addr, {key, value, timestamp, addr});
             }
         }
 
@@ -104,6 +126,11 @@ public:
         std::vector<Reply> replies;
 
         for (const auto& addr : replicas) {
+            if (!failure_detector_.IsAlive(addr)) {
+                std::cout << "  " << addr << " known DOWN, skipping" << std::endl;
+                continue;
+            }
+
             GetRequest request;
             request.set_key(key);
             GetResponse response;
@@ -145,17 +172,54 @@ public:
         return true;
     }
 
+    // Call this periodically to replay any hints whose destination node
+    // has come back up.
+    void ReplayHintsForRecoveredNodes() {
+        std::lock_guard<std::mutex> lock(hints_mutex_);
+        for (auto it = hints_.begin(); it != hints_.end(); ) {
+            const std::string& node = it->first;
+            if (failure_detector_.IsAlive(node)) {
+                std::vector<Hint>& pending = it->second;
+                std::cout << "[hinted-handoff] " << node << " is back UP, replaying "
+                          << pending.size() << " hint(s)" << std::endl;
+                for (const auto& hint : pending) {
+                    PutRequest request;
+                    request.set_key(hint.key);
+                    request.set_value(hint.value);
+                    request.set_timestamp(hint.timestamp);
+                    PutResponse response;
+                    ClientContext context;
+                    Status status = stubs_[node]->Put(&context, request, &response);
+                    std::cout << "  replayed key='" << hint.key << "' to " << node
+                              << " -> " << (status.ok() ? "ok" : "FAILED") << std::endl;
+                }
+                it = hints_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
 private:
     static uint64_t NowMillis() {
         using namespace std::chrono;
         return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     }
 
+    void StoreHint(const std::string& dead_node, Hint hint) {
+        std::lock_guard<std::mutex> lock(hints_mutex_);
+        hints_[dead_node].push_back(std::move(hint));
+    }
+
     ConsistentHashRing ring_;
     int replication_factor_;
     int write_quorum_;
     int read_quorum_;
+    FailureDetector failure_detector_;
     std::unordered_map<std::string, std::unique_ptr<KVStoreService::Stub>> stubs_;
+
+    std::mutex hints_mutex_;
+    std::unordered_map<std::string, std::vector<Hint>> hints_;
 };
 
 int main() {
@@ -169,6 +233,8 @@ int main() {
     Router router(nodes, /*virtual_nodes=*/10, /*replication_factor=*/3,
                   /*write_quorum=*/2, /*read_quorum=*/2);
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+
     std::vector<std::pair<std::string, std::string>> data = {
         {"user:1", "abhishek"},
         {"user:2", "priya"},
@@ -180,15 +246,16 @@ int main() {
         {"order:102", "delivered"},
     };
 
-    std::cout << "--- writing (quorum W=2 of 3 replicas) ---" << std::endl;
+    std::cout << "--- writing ---" << std::endl;
     int put_failures = 0;
     for (const auto& [key, value] : data) {
         if (!router.Put(key, value)) {
             put_failures++;
         }
+        router.ReplayHintsForRecoveredNodes();
     }
 
-    std::cout << "\n--- reading back (quorum R=2 of 3 replicas) ---" << std::endl;
+    std::cout << "\n--- reading back ---" << std::endl;
     int mismatches = 0;
     for (const auto& [key, expected_value] : data) {
         std::string actual_value;
@@ -200,9 +267,7 @@ int main() {
     }
 
     std::cout << "\nput_failures=" << put_failures << " mismatches=" << mismatches << std::endl;
-    std::cout << (put_failures == 0 && mismatches == 0
-                  ? "PASS: quorum reads/writes succeeded despite any single node being down"
-                  : "FAIL") << std::endl;
+    std::cout << (put_failures == 0 && mismatches == 0 ? "PASS" : "FAIL") << std::endl;
 
     return 0;
 }
