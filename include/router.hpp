@@ -82,7 +82,7 @@ public:
             kvstore::PutResponse response;
             grpc::ClientContext context;
 
-            grpc::Status status = stubs_[addr]->Put(&context, request, &response);
+            grpc::Status status = stubs_.at(addr)->Put(&context, request, &response);
             if (status.ok() && response.success()) {
                 successes++;
             } else {
@@ -120,7 +120,7 @@ public:
             kvstore::GetResponse response;
             grpc::ClientContext context;
 
-            grpc::Status status = stubs_[addr]->Get(&context, request, &response);
+            grpc::Status status = stubs_.at(addr)->Get(&context, request, &response);
             if (!status.ok()) {
                 if (verbose_) std::cerr << "  Get from replica " << addr << " FAILED: " << status.error_message() << std::endl;
                 continue;
@@ -173,7 +173,7 @@ public:
                     request.set_timestamp(hint.timestamp);
                     kvstore::PutResponse response;
                     grpc::ClientContext context;
-                    grpc::Status status = stubs_[node]->Put(&context, request, &response);
+                    grpc::Status status = stubs_.at(node)->Put(&context, request, &response);
                     if (verbose_) {
                         std::cout << "  replayed key='" << hint.key << "' to " << node
                                    << " -> " << (status.ok() ? "ok" : "FAILED") << std::endl;

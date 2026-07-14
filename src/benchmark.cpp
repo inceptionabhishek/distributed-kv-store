@@ -35,21 +35,17 @@ int main(int argc, char** argv) {
               << " keyspace=" << num_keys
               << " write_ratio=" << write_ratio << std::endl;
 
-    {
-        Router setup(nodes, 10, 3, 2, 2, /*verbose=*/false);
-        std::this_thread::sleep_for(std::chrono::milliseconds(600));
-        for (int i = 0; i < num_keys; ++i) {
-            setup.Put("bench:" + std::to_string(i), "seed_value");
-        }
-        std::cout << "Pre-populated " << num_keys << " keys." << std::endl;
+    Router bench_router(nodes, 10, 3, 2, 2, /*verbose=*/false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    for (int i = 0; i < num_keys; ++i) {
+        bench_router.Put("bench:" + std::to_string(i), "seed_value");
     }
+    std::cout << "Pre-populated " << num_keys << " keys." << std::endl;
 
     std::atomic<bool> stop{false};
     std::vector<ThreadResult> results(num_threads);
 
     auto worker = [&](int thread_id) {
-        Router router(nodes, 10, 3, 2, 2, /*verbose=*/false);
-        std::this_thread::sleep_for(std::chrono::milliseconds(600));
         std::mt19937 rng(thread_id + 12345);
         std::uniform_int_distribution<int> key_dist(0, num_keys - 1);
         std::uniform_real_distribution<double> op_dist(0.0, 1.0);
@@ -61,10 +57,10 @@ int main(int argc, char** argv) {
 
             auto t0 = std::chrono::steady_clock::now();
             if (do_write) {
-                router.Put(key, "value_" + std::to_string(rng()));
+                bench_router.Put(key, "value_" + std::to_string(rng()));
             } else {
                 std::string out;
-                router.Get(key, &out);
+                bench_router.Get(key, &out);
             }
             auto t1 = std::chrono::steady_clock::now();
 
