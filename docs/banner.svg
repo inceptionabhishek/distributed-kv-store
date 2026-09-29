@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="300" viewBox="0 0 1100 300" role="img" aria-label="Distributed KV Store: quorum, durability, recovery">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#10192d"/><stop offset="1" stop-color="#172e44"/></linearGradient>
+    <linearGradient id="accent"><stop stop-color="#5eead4"/><stop offset="1" stop-color="#60a5fa"/></linearGradient>
+  </defs>
+  <rect width="1100" height="300" rx="18" fill="url(#bg)"/>
+  <path d="M39 242H1062" stroke="#345269"/>
+  <text x="48" y="61" fill="#5eead4" font-family="monospace" font-size="15" letter-spacing="3">C++17 · gRPC · DISTRIBUTED SYSTEMS</text>
+  <text x="45" y="125" fill="#f8fafc" font-family="sans-serif" font-weight="700" font-size="48">Distributed KV Store</text>
+  <text x="48" y="164" fill="#b9c9dd" font-family="sans-serif" font-size="19">Place. Replicate. Persist. Recover.</text>
+  <text x="48" y="211" fill="#5eead4" font-family="monospace" font-size="15">N = 3   W = 2   R = 2   W + R &gt; N</text>
+  <g stroke="url(#accent)" stroke-width="2" fill="none">
+    <path d="M862 126L734 190M862 126L863 203M862 126L997 190"/>
+  </g>
+  <g font-family="monospace" text-anchor="middle">
+    <rect x="791" y="59" width="145" height="67" rx="12" fill="#203b50" stroke="#5eead4"/>
+    <text x="863" y="88" fill="#f8fafc" font-size="17">coordinator</text>
+    <text x="863" y="110" fill="#5eead4" font-size="12">early quorum</text>
+    <rect x="692" y="175" width="89" height="49" rx="9" fill="#203b50" stroke="#60a5fa"/>
+    <rect x="819" y="175" width="89" height="49" rx="9" fill="#203b50" stroke="#60a5fa"/>
+    <rect x="946" y="175" width="89" height="49" rx="9" fill="#203b50" stroke="#60a5fa"/>
+    <text x="736" y="205" fill="#f8fafc" font-size="16">WAL A</text>
+    <text x="863" y="205" fill="#f8fafc" font-size="16">WAL B</text>
+    <text x="990" y="205" fill="#f8fafc" font-size="16">WAL C</text>
+  </g>
+  <text x="48" y="274" fill="#b9c9dd" font-family="monospace" font-size="14">Concurrent fan-out · Durable hints · Tombstones · Read repair · Versioned membership</text>
+</svg>

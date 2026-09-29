@@ -1,168 +1,351 @@
-# distributed-kv-store
-distributed-kv-store
+<div align="center">
+  <img src="docs/banner.svg" alt="Distributed KV Store — place, replicate, persist, recover" width="100%" />
 
+  <p>A C++ database project that makes failure, durability, and consistency visible.</p>
 
-![Build and Test](https://github.com/inceptionabhishek/distributed-kv-store/actions/workflows/build-and-test.yml/badge.svg)
+  <a href="https://github.com/inceptionabhishek/distributed-kv-store/actions/workflows/build-and-test.yml"><img alt="Build and Test" src="https://github.com/inceptionabhishek/distributed-kv-store/actions/workflows/build-and-test.yml/badge.svg" /></a>
+  <img alt="C++17" src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus" />
+  <img alt="Networking gRPC" src="https://img.shields.io/badge/networking-gRPC-244C5A" />
+  <img alt="Replication" src="https://img.shields.io/badge/quorum-N3%20W2%20R2-0F766E" />
+  <img alt="Consistency" src="https://img.shields.io/badge/consistency-LWW%20eventual-7C3AED" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-64-16A34A" />
 
+  <p><a href="#quick-start">Run it</a> · <a href="#watch-a-node-fail-and-recover">Failure demo</a> · <a href="docs/DESIGN.md">Design decisions</a> · <a href="docs/INTERVIEW_GUIDE.md">Interview guide</a></p>
+</div>
 
+## What this project demonstrates
 
+A Dynamo-inspired key-value store with independent gRPC storage processes and one authoritative coordinator. A key is placed on three distinct nodes using consistent hashing. A write returns when two replicas acknowledge it; a read reconciles two replies. The remaining replica catches up through durable hints and repair.
 
-# Distributed Key-Value Store
+The implementation follows a mutation through its complete lifecycle: **placement → quorum → WAL → restart → repair → migration**.
 
-A distributed, replicated, eventually-consistent key-value store built from scratch in C++, using gRPC for networking. Built incrementally in stages, each one solving a specific, real failure mode of the previous stage rather than being designed upfront.
+| Capability | Implementation |
+|---|---|
+| Data placement | Deterministic 64-bit FNV-1a + mixing; 100 virtual points per node by default |
+| Quorum replication | Configurable N/W/R; validates W + R > N |
+| Concurrent coordination | Bounded C++ worker pool, early quorum completion, late write replication |
+| Deadline handling | Operation and replica deadlines; parent gateway deadline propagated; excess reads cancelled |
+| Version ordering | Hybrid clock + writer identity; explicit applied/duplicate/stale/conflict outcomes |
+| Safe deletion | Versioned tombstones replicated and repaired like values |
+| Crash recovery | Checksummed WAL, incomplete-tail recovery, atomic snapshots, directory ownership lock |
+| Durability choices | always / periodic / memory |
+| Replica recovery | Durable hints, latest-version compaction, retry backoff, asynchronous read repair |
+| Anti-entropy | Periodic streamed full scans that repair keys clients never read |
+| Membership | Persisted ring epochs, quiesced data migration, graceful decommission |
+| Operations | CLI, structured coordinator logs, Prometheus endpoint, local process manager |
+| Deployment | Docker Compose cluster with named data volumes; optional Prometheus |
+| Validation | Unit tests, real gRPC integration tests, fault injection, SIGKILL recovery, sanitizer option |
 
-## Why this exists
-
-Most "distributed KV store" portfolio projects stop at consistent hashing. This one goes further: it implements and *measures* the actual tradeoffs distributed systems make — consistency vs. availability, replication cost vs. durability, and the real latency/throughput impact of tolerating a node failure — rather than just asserting them.
+This is an educational storage system with explicit boundaries: LWW eventual reconciliation, one authoritative coordinator, full-scan repair and retained tombstones. It does not claim transactions or linearizability.
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    CLI["kvctl / application"] --> G["Coordinator · gRPC gateway"]
+    G --> R["Consistent-hash ring · N=3"]
+    R --> Q["Concurrent replica calls · W=2 / R=2"]
+    Q --> A["Node A · WAL + map"]
+    Q --> B["Node B · WAL + map"]
+    Q --> C["Node C · WAL + map"]
+    Q --> D["Node D · WAL + map"]
+    G --> H["Durable hint journal"]
+    H --> F["Background replay + anti-entropy"]
+    F --> A
+    F --> B
+    F --> C
+    F --> D
+    G --> M["Prometheus /metrics"]
 ```
-                    ┌─────────────┐
-                    │   Router    │  <- client-side coordinator
-                    │ (this repo) │     (consistent hashing, quorum,
-                    └──────┬──────┘      failure detection, hinted handoff)
-                           │
-        ┌──────────────────┼──────────────────┬──────────────────┐
-        │                  │                  │                  │
-   ┌────▼────┐        ┌────▼────┐        ┌────▼────┐        ┌────▼────┐
-   │ Node 0  │        │ Node 1  │        │ Node 2  │        │ Node 3  │
-   │ (gRPC   │        │ (gRPC   │        │ (gRPC   │        │ (gRPC   │
-   │ server) │        │ server) │        │ server) │        │ server) │
-   └─────────┘        └─────────┘        └─────────┘        └─────────┘
+
+The cluster normally contains four physical nodes. Each key has three replicas: **cluster size is not the replication factor**. Storage nodes do not elect leaders or route requests; the coordinator owns routing, quorum reconciliation and membership changes.
+
+## Quick start
+
+### Build locally
+
+Requirements: C++17 compiler, CMake, gRPC, Protobuf, GoogleTest and Python 3 for the demonstration scripts.
+
+macOS / Homebrew:
+
+```bash
+brew install cmake grpc protobuf googletest
 ```
 
-Each **node** is an independent process running a thread-safe, in-memory key-value store behind a gRPC service. The **router** is a client-side coordinator: it never stores data itself, only decides which nodes to talk to and reconciles their answers.
+Ubuntu:
 
-## What it does, stage by stage
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config libgrpc++-dev \
+  protobuf-compiler-grpc libprotobuf-dev protobuf-compiler libgtest-dev python3
+```
 
-| Stage | What was added | The problem it solves |
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+ctest --test-dir build --output-on-failure --timeout 30
+python3 scripts/cluster.py up
+```
+
+The manager starts four durable storage nodes at ports 50051–50054 and the coordinator at 50050. It stores process records, logs and data beneath `.data/local/`. It preserves those files on shutdown.
+
+```bash
+./build/kvctl put user:1 abhishek
+./build/kvctl get user:1
+./build/kvctl replicas user:1
+./build/kvctl delete user:1
+./build/kvctl metrics
+python3 scripts/cluster.py down
+```
+
+CLI exit codes: 0 success, 1 transport/usage error, 2 rejected mutation/admin operation, 3 key not found. A missing key is distinct from a failed read quorum.
+
+### Docker Compose
+
+```bash
+docker compose up --build -d
+docker compose exec router kvctl put user:1 abhishek
+docker compose exec router kvctl get user:1
+docker compose exec router kvctl replicas user:1
+docker compose down
+```
+
+Inside the router container, add `--address localhost:50050` if overriding the CLI default. Host clients use `localhost:50050`. Inside the cluster, replicas have addresses such as `node2:50051`, not host-mapped port 50052.
+
+Named volumes preserve WALs, snapshots, hints and membership across container restarts. The image runs as a non-root user and executes the tests during its build.
+
+## Watch a node fail and recover
+
+The automated demonstration creates its own temporary data directory and uses ports 52050–52054:
+
+```bash
+python3 scripts/demo.py
+```
+
+It performs a quorum write, kills one of that key's actual replicas with SIGKILL, writes successfully during the outage, restarts the coordinator, recovers the storage process, verifies the missing version arrives, and deletes the key with a tombstone. It shuts down its own processes and removes its temporary demo data afterward.
+
+Expected final output:
+
+```text
+PASS: writes, failure, router restart, replica recovery and deletion
+```
+
+For a manual experiment, first use `kvctl replicas KEY` to choose a replica of your key:
+
+```bash
+python3 scripts/cluster.py kill node2
+./build/kvctl put user:2 "written during outage"
+./build/kvctl metrics
+python3 scripts/cluster.py restart router
+python3 scripts/cluster.py restart node2
+./build/kvctl repair
+```
+
+Inject a slow replica or failed data requests:
+
+```bash
+python3 scripts/cluster.py --delay-ms 1000 restart node2
+python3 scripts/cluster.py --fail-every 2 restart node3
+# Restore normal service:
+python3 scripts/cluster.py restart node2
+python3 scripts/cluster.py restart node3
+```
+
+Heartbeats are suspicions, not proof of failure. A node can answer Ping while its data RPCs are slow; request deadlines still protect the quorum path.
+
+## Read, write and retry semantics
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Coordinator
+    participant A as Replica A
+    participant B as Replica B
+    participant C as Replica C
+    Client->>Coordinator: Reserve version
+    Coordinator-->>Client: Durable retry token
+    Client->>Coordinator: Put(key, value, version)
+    par Concurrent replica calls
+        Coordinator->>A: Put
+        A->>A: Compare version; WAL + fsync
+        A-->>Coordinator: Applied
+    and
+        Coordinator->>B: Put
+        B->>B: Compare version; WAL + fsync
+        B-->>Coordinator: Applied
+    and
+        Coordinator->>C: Put
+    end
+    Coordinator-->>Client: Success when W=2
+    C-->>Coordinator: Late success or deadline failure
+    Note over Coordinator,C: Failure enters durable repair queue
+```
+
+Versions compare lexicographically as `(physical_ms, logical_counter, writer_id)`. The logical counter handles same-millisecond writes and local wall-clock rollback; the writer ID breaks ties between independent writers.
+
+The node accepts a newer version, acknowledges an identical retry, rejects a stale version, and rejects equal-version payload changes. A delete writes a tombstone rather than erasing the record. Reads choose the highest version, including tombstones, from a responding quorum and queue repair for stale or unobserved replicas.
+
+`kvctl` prints a version before dispatch. Retry the identical mutation with that token:
+
+```bash
+./build/kvctl put order:42 shipped
+# Copy the version printed by the preceding command:
+./build/kvctl --version PHYSICAL:LOGICAL:WRITER put order:42 shipped
+```
+
+A quorum failure is **not a rollback**. A replica may already have applied the version, or a stored hint may apply it later. Reusing the token is safe; a new token represents a new mutation.
+
+## Persistence
+
+Storage defaults to `--durability always`.
+
+| Mode | Before acknowledgement | After an abrupt restart |
 |---|---|---|
-| 1 | Thread-safe single-node store (`std::unordered_map` + mutex) | Baseline: correct concurrent access to a shared map |
-| 2 | gRPC server/client | Turns the in-process store into something reachable over a network |
-| 3 | Multi-node cluster, `hash(key) % N` routing | Spreads keys across multiple nodes |
-| 4 | Consistent hashing with virtual nodes | `% N` remaps ~75% of keys when the cluster resizes; consistent hashing remaps only ~1/(N+1) |
-| 5 | Synchronous full replication | A single node dying shouldn't lose data — but "wait for all N replicas" means one dead replica blocks every write to its keys |
-| 6 | Quorum reads/writes (W=2, R=2, N=3) + last-write-wins via timestamps | Fixes Stage 5: tolerates any single node being down for both reads and writes, because W + R > N guarantees overlap |
-| 7 | Heartbeat failure detection + hinted handoff | Fast failover instead of waiting on RPC timeouts; recovers the 3rd replica copy automatically once a dead node comes back |
-
-Every stage above was verified working before moving to the next — including deliberately breaking things (killing nodes mid-run, resizing the cluster) to confirm the failure modes and fixes behave as claimed, not just in theory.
-
-## Key design decisions
-
-**Deterministic hashing (FNV-1a + MurmurHash3 finalizer), not `std::hash`.**
-`std::hash<std::string>` is randomized per-process in some standard library implementations (a hash-flood DoS mitigation) — fine for an in-memory map, fatal for a router that needs the same key to route to the same node across restarts. A custom FNV-1a hash fixes determinism, but its raw output has weak avalanche (similar inputs like `"node0#0"` and `"node0#1"` hash to nearby values) — bad for scattering virtual nodes around a ring. A MurmurHash3-style bit-mixing finalizer fixes that.
-
-**Consistent hashing with virtual nodes (10 per physical node).**
-A single ring point per node means load balance is at the mercy of where that one hash lands. Multiple virtual points per node average out the imbalance — verified: adding a 4th node to a 3-node cluster with naive `% N` moved ~75% of keys; with the ring, ~13-25%.
-
-**Quorum (W=2, R=2, N=3), not wait-for-all.**
-Verified directly: with wait-for-all replication, killing 1 of 4 nodes failed 5 of 8 writes and produced 2 read mismatches, even though only one node was down. Switching to quorum (W+R > N) fixed both failure modes while keeping the same guarantee — any read is mathematically guaranteed to overlap with the most recent acknowledged write.
-
-**Last-write-wins via client-assigned timestamps, not vector clocks.**
-When replicas disagree (because one missed a write), the router needs a deterministic way to pick a winner. LWW is simple and works well when clock skew across nodes is small and true concurrent writes to the same key are rare. The tradeoff: LWW can silently drop a legitimately concurrent write if clocks disagree or two writes race within the same millisecond. Vector clocks (as in the original Dynamo paper) solve this properly by tracking causality instead of wall-clock time, at the cost of needing explicit application-level conflict resolution (e.g. "sibling" values) when true concurrent writes are detected. LWW was chosen here for simplicity; this is a conscious, documented tradeoff, not an oversight.
-
-**Router-side hinted handoff, not replica-side.**
-When a write's target replica is down, the router holds the write in memory and replays it once the target recovers. Real systems (Cassandra) store hints on *another* live replica instead of the coordinator, so the hint survives a coordinator crash. This implementation's hints live only in the router's memory and are lost if the router process dies — a known, deliberate simplification.
-
-## Known limitations (things I'd build next)
-
-- **Sequential replica fan-out.** `Put()` waits on all N replica RPCs sequentially, even after write quorum is already satisfied. Benchmarking surfaced this concretely: a healthy 4-node cluster was measurably *slower* than one with a node down, because the down node's RPC was skipped instantly while the healthy path paid for 3 full sequential round-trips. Firing replica RPCs concurrently and returning after `write_quorum_` successes would fix this — see the Benchmarks section below for the full analysis.
-- **No persistence.** Everything is in-memory; a node restart loses that node's data until it's re-synced from replicas via reads/hinted handoff. A write-ahead log would fix this.
-- **No real data rebalancing on membership change.** Consistent hashing changes *routing* correctly when a node joins/leaves, but nobody actually migrates the underlying data between nodes yet — a key that "moves" to a new node via the ring isn't physically copied there.
-- **Hints don't survive a router crash**, as noted above.
-
-## Project structure
-
-```
-├── CMakeLists.txt          # cross-platform build (macOS/Homebrew Config mode, Linux/pkg-config)
-├── proto/kvstore.proto     # gRPC service definition
-├── include/
-│   ├── kv_store.hpp        # single-node store (Stage 1/6)
-│   ├── simple_hash.hpp     # deterministic hash + ring-hash finalizer
-│   ├── consistent_hash_ring.hpp   # Stage 4 ring with virtual nodes
-│   ├── failure_detector.hpp       # Stage 7 heartbeat prober
-│   └── router.hpp          # client-side coordinator (Stages 4-7 combined)
-├── src/
-│   ├── server.cpp          # gRPC node server
-│   ├── client.cpp          # minimal single-node client (Stage 2)
-│   ├── router.cpp          # interactive demo of the full router
-│   ├── ring_demo.cpp       # standalone proof that consistent hashing moves fewer keys than % N
-│   ├── fd_demo.cpp         # standalone failure-detector liveness demo
-│   └── benchmark.cpp       # load generator: throughput + latency percentiles
-├── tests/                  # GoogleTest unit tests (26 tests)
-└── .github/workflows/      # CI: build + test on every push
-```
-
-## Building and running
+| always | Append WAL + fsync | Recover acknowledged replica records |
+| periodic | Append WAL; fsync worker targets 100 ms | Recent records can be lost |
+| memory | Update map only | All local records are lost |
 
 ```bash
-mkdir build && cd build
-cmake ..
-make
+./build/kv_server --port 50051 --data .data/node1 --durability always
+./build/kv_server --port 50052 --data .data/node2 --durability periodic
+./build/kvctl --address localhost:50051 snapshot
 ```
 
-Start 4 storage nodes (separate terminals):
+The WAL uses length-prefixed checksummed frames. Recovery truncates an incomplete final append, but fails closed on a complete corrupted frame. Snapshots are synced and atomically published before the WAL is truncated. Values, versions and tombstones all survive snapshots.
+
+Hints have their own fsynced journal, retain only the latest version for each target/key, survive coordinator restart, and remain queued after failed replay. The default hint TTL is 24 hours. Tombstones have **no expiry**; this implementation does not pretend that a fixed TTL makes tombstone garbage collection safe.
+
+## Membership and rebalancing
+
+A new node receives the data its candidate ring assigns before the coordinator activates the new membership epoch.
+
 ```bash
-./kv_server 50051
-./kv_server 50052
-./kv_server 50053
-./kv_server 50054
+# Start the additional node in another terminal:
+./build/kv_server --port 50055 --data .data/node5 --durability always
+
+# Ask the existing coordinator to migrate and activate epoch 2:
+./build/kvctl --timeout-ms 60000 reconfigure 2 \
+  localhost:50051,localhost:50052,localhost:50053,localhost:50054,localhost:50055
+
+# Gracefully decommission it after migrating back to four nodes:
+./build/kvctl --timeout-ms 60000 reconfigure 3 \
+  localhost:50051,localhost:50052,localhost:50053,localhost:50054
 ```
 
-Run the router demo:
+The manager uses `127.0.0.1` seed addresses; use those same address strings in reconfiguration to preserve the existing node identities and ring placement. Epochs must increase beyond the current value shown by `kvctl replicas KEY`.
+
+Migration pauses coordinator admission, drains in-flight work, scans old and new members, copies newest values and tombstones to every new owner, and persists the epoch before cutover. Every old and new node must be reachable. An interrupted copy leaves the old ring active. Old extra copies are retained.
+
+This is a controlled single-coordinator migration. It does not implement gossip, automatic failed-node replacement, multiple independently reconfiguring routers, or an online dual-write cutover.
+
+## Observability
+
+Run the coordinator with an HTTP metrics endpoint:
+
 ```bash
-./kv_router
+./build/kv_router --serve 50050 --nodes localhost:50051,localhost:50052,localhost:50053,localhost:50054 \
+  --data .data/router --metrics-port 9090 --verbose 1
+curl http://localhost:9090/metrics
 ```
 
-Run tests:
+Docker publishes coordinator metrics at 9090 and storage metrics at 9091–9094. Optional Prometheus:
+
 ```bash
-ctest --output-on-failure
+docker compose --profile monitoring up -d
 ```
 
-## Benchmarks
+Open [Prometheus](http://localhost:9095). Useful expressions:
 
-Measured with `./benchmark <threads> <duration_sec> <keyspace> <write_ratio>` — 8 threads, 10 seconds, 1000-key keyspace, 50/50 read/write split, against the full 4-node cluster with quorum W=2/R=2.
-
-**All 4 nodes healthy:**
-
-```
-Benchmark config: threads=8 duration=10s keyspace=1000 write_ratio=0.5
-Pre-populated 1000 keys.
-=== Results ===
-Total ops:      159610
-Elapsed:        10.0039s
-Throughput:     15954.8 ops/sec
-Latency p50:    487.75 us
-Latency p95:    726.042 us
-Latency p99:    895.417 us
-Latency max:    8514.17 us
+```promql
+rate(kv_quorum_failures_total[1m])
+kv_hints_pending
+histogram_quantile(0.99, sum by (le) (rate(kv_request_latency_seconds_bucket{job="kv-coordinator"}[1m])))
+rate(kv_wal_fsync_seconds_sum[1m]) / rate(kv_wal_fsync_seconds_count[1m])
 ```
 
-**1 of 4 nodes down (killed before the run):**
+Metrics distinguish quorum failures, RPC failures, deadline expiry, repair scheduling and queue rejection. Structured coordinator logs include operation, key hash, success and version time/counter. No raw values are logged.
 
+## Benchmarks you can reproduce
+
+A short verification run on macOS ARM64 used four storage processes with always/fsync durability, eight client threads, 1,000 keys, a 50/50 read/write split, and three two-second trials per mode:
+
+| Mode | Mean successful ops/sec | Run-to-run standard deviation | Quorum failures |
+|---|---:|---:|---:|
+| Sequential | 10,703 | 612 | 0 |
+| Concurrent + early quorum | 12,697 | 435 | 0 |
+
+The concurrent mode improved mean successful throughput by approximately **18.6%** in this short sample. Five concurrent-version stale rejections across all six trials are recorded separately from availability failures. Tail latency varied, including one 91 ms maximum in the concurrent runs; improved throughput does not guarantee every tail-latency measure improves. These are verification results, not a capacity claim. [Raw measurements](docs/benchmark-results.json) include every trial and sample percentile.
+
+```bash
+./build/benchmark 8 10 1000 0.5 --mode concurrent
+./build/benchmark 8 10 1000 0.5 --mode sequential
+python3 scripts/benchmarks.py --runs 5 --duration 10
 ```
-Benchmark config: threads=8 duration=10s keyspace=1000 write_ratio=0.5
-[failure-detector] localhost:50051 is now DOWN
-Pre-populated 1000 keys.
-=== Results ===
-Total ops:      205859
-Elapsed:        10.0037s
-Throughput:     20578.2 ops/sec
-Latency p50:    378.292 us
-Latency p95:    522.791 us
-Latency p99:    631.375 us
-Latency max:    8692.62 us
+
+The benchmark checks prepopulation, uses fixed seeds, synchronizes worker start, separates successful operations from failures, and reports successful throughput plus estimated p50/p95/p99 latency. It classifies stale rejections, conflicts and quorum failures separately. Sequential mode serializes all replica calls; concurrent mode combines fan-out with early quorum completion, so this comparison measures both changes. Per-worker reservoirs cap retained samples at 100,000. The repeated runner alternates modes and writes raw JSON, standard deviation and a normal-approximation confidence interval.
+
+For Docker nodes, supply their host addresses via `--nodes`; benchmark processes talk directly to replicas. Benchmark router state is in memory, anti-entropy is disabled to isolate foreground work, and hint replay remains enabled. Record the storage durability mode separately.
+
+These are closed-loop local microbenchmarks: they exclude queueing before a worker chooses a request, exhibit coordinated omission, and do not model WAN behavior. When reservoir sampling activates, merged worker samples are not perfectly weighted if workers complete different numbers of operations. Always report hardware, durability, errors, workload and repeated-run variation alongside numbers.
+
+The original prototype's “degraded cluster is faster” result is preserved in [HISTORY.md](docs/HISTORY.md). Those historical numbers describe the old sequential memory-only implementation; they are not current performance claims.
+
+## Validation
+
+```bash
+ctest --test-dir build --output-on-failure --timeout 30
+
+cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DKV_SANITIZERS=ON
+cmake --build build-asan --parallel 4
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build-asan --output-on-failure --timeout 30
 ```
 
-### A counterintuitive result, explained
+The 64-test suite covers:
 
-The one-node-down run is ~29% *faster* (20,578 vs 15,954 ops/sec) with lower latency at every percentile. That's not noise, and it's not "failure is free" — it's a real gap in the current implementation.
+- Local concurrent access, absence versus empty value, deterministic version ordering and duplicate handling.
+- Ring determinism, distinct replicas, load distribution and limited key movement.
+- WAL/snapshot restart, partial-tail recovery, corruption detection and directory locking.
+- Durable hints, retry backoff, expiry and protection against an old replay removing a new hint.
+- One/two replica failures, slow replicas, propagated deadlines and cancelled reads.
+- Read repair, automatic replay, unread-key anti-entropy and concurrent-write convergence.
+- Tombstone repair, migration/decommission and persisted membership restoration.
+- Acknowledged data surviving a real storage process SIGKILL.
 
-`Router::Put()` fans out to all 3 replicas **sequentially**, and always waits on all 3 round-trips even after the 2 successes needed for write quorum have already landed. When a replica is known-dead (via the failure detector), that "call" is skipped instantly — an in-memory check, no network round-trip — and the write is queued as a hint instead. So the healthy path pays for 3 sequential network round-trips per write, while the degraded path pays for only 2, plus a free instant skip. Fewer real round-trips per write is exactly why it's faster.
+GitHub Actions builds release/debug-with-symbols configurations with and without address/undefined-behavior sanitizers and runs the process demo on the non-sanitized job.
 
-This points to a concrete, valuable improvement: fire replica RPCs **concurrently** rather than sequentially, and return as soon as `write_quorum_` successes arrive rather than waiting on every replica. That would make the healthy case roughly as fast as a single round-trip (bounded by the slowest of the 2 fastest replicas) instead of the sum of 3, and would remove this anomaly entirely. Left as a documented next step rather than implemented here, since it changes the concurrency model of the write path meaningfully (needs per-replica threads or async gRPC calls plus careful handling of the "still count a late 3rd success after quorum is already met" case for repair purposes).
+## Repository map
 
-## Testing
+```text
+proto/kvstore.proto            Network API and admin operations
+include/version.hpp           Ordered versions and hybrid clock
+include/consistent_hash_ring.hpp
+include/thread_pool.hpp       Bounded concurrent execution
+include/router.hpp            Coordinator API
+src/coordinator.cpp           Quorums, repair, hints and membership
+src/kv_store.cpp              Local versioned register map
+src/journal.cpp               WAL framing, fsync, snapshots and recovery
+src/hint_queue.cpp            Durable target/key repair queue
+src/node_service.cpp          Storage gRPC service and fault controls
+src/kvctl.cpp                 User/admin CLI and retry tokens
+src/metrics_http.cpp          Prometheus HTTP endpoint
+src/benchmark.cpp             Workload and latency measurements
+scripts/cluster.py            Local process lifecycle
+scripts/demo.py               End-to-end failure/recovery demo
+scripts/benchmarks.py          Repeated measurements and raw results
+tests/                        Unit, gRPC and process-crash tests
+monitoring/prometheus.yml     Optional scrape configuration
+docs/DESIGN.md                Guarantees and design decisions
+docs/INTERVIEW_GUIDE.md        Explanation, questions and resume wording
+```
 
-26 GoogleTest unit tests covering the single-node store (concurrency, edge cases, last-write-wins) and the consistent hash ring (determinism, load balance, minimal-movement-on-resize). CI runs the full build + test suite on every push via GitHub Actions.
+CMake generates Protobuf/gRPC sources into `build/generated/`. Checked-in `generated/` files are reference outputs and are not used by the build.
+
+## Boundaries and next engineering steps
+
+The current guarantees depend on surviving copies, trusted clients, a stable replica universe during normal operation and one authoritative coordinator. LWW chooses one value rather than preserving siblings. A process crash is tested; disk loss or simultaneous destruction of every replica is not recoverable.
+
+Repair scans are bounded at 100,000 records per node. The store uses one mutex. Snapshots pause local writes. Hints can grow across distinct keys during an extended outage. Membership migration pauses requests and requires reachable old members. Tombstones and obsolete non-owner copies are retained. No TLS, authentication, distributed transactions or consensus-based membership is implemented.
+
+The next meaningful extensions are incremental/Merkle anti-entropy, sharded locks, WAL group commit, node-side epoch fencing, online migration and safe tombstone/obsolete-copy collection.
+
+For a walkthrough of the exact guarantees and tradeoffs, read [DESIGN.md](docs/DESIGN.md). For an interview-ready explanation, use [INTERVIEW_GUIDE.md](docs/INTERVIEW_GUIDE.md).
