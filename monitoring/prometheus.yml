@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+scrape_configs:
+  - job_name: kv-coordinator
+    static_configs:
+      - targets: ["router:9090"]
+  - job_name: kv-storage
+    static_configs:
+      - targets: ["node1:9091", "node2:9091", "node3:9091", "node4:9091"]

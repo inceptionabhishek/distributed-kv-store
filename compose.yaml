@@ -1,0 +1,49 @@
+name: distributed-kv-store
+x-node: &node
+  build: .
+  command: ["kv_server", "--port", "50051", "--data", "/data/store", "--durability", "always", "--metrics-port", "9091"]
+  healthcheck:
+    test: ["CMD", "kvctl", "--address", "localhost:50051", "metrics"]
+    interval: 2s
+    timeout: 2s
+    retries: 20
+  stop_grace_period: 10s
+services:
+  node1:
+    <<: *node
+    ports: ["50051:50051", "9091:9091"]
+    volumes: ["node1:/data"]
+  node2:
+    <<: *node
+    ports: ["50052:50051", "9092:9091"]
+    volumes: ["node2:/data"]
+  node3:
+    <<: *node
+    ports: ["50053:50051", "9093:9091"]
+    volumes: ["node3:/data"]
+  node4:
+    <<: *node
+    ports: ["50054:50051", "9094:9091"]
+    volumes: ["node4:/data"]
+  router:
+    build: .
+    command: ["kv_router", "--serve", "50050", "--nodes", "node1:50051,node2:50051,node3:50051,node4:50051", "--data", "/data/router", "--metrics-port", "9090"]
+    ports: ["50050:50050", "9090:9090"]
+    volumes: ["router:/data"]
+    depends_on:
+      node1: {condition: service_healthy}
+      node2: {condition: service_healthy}
+      node3: {condition: service_healthy}
+      node4: {condition: service_healthy}
+    stop_grace_period: 10s
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    ports: ["9095:9090"]
+    volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    profiles: ["monitoring"]
+volumes:
+  node1:
+  node2:
+  node3:
+  node4:
+  router:

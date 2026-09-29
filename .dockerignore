@@ -1,0 +1,7 @@
+.git
+build
+build-*
+.data
+benchmark-results
+.vscode
+generated
