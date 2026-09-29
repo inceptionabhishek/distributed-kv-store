@@ -167,11 +167,11 @@ sequenceDiagram
     Client->>Coordinator: Put(key, value, version)
     par Concurrent replica calls
         Coordinator->>A: Put
-        A->>A: Compare version; WAL + fsync
+        A->>A: Compare version, append WAL and fsync
         A-->>Coordinator: Applied
     and
         Coordinator->>B: Put
-        B->>B: Compare version; WAL + fsync
+        B->>B: Compare version, append WAL and fsync
         B-->>Coordinator: Applied
     and
         Coordinator->>C: Put
