@@ -26,6 +26,14 @@ static const char* KVStoreService_method_names[] = {
   "/kvstore.KVStoreService/Put",
   "/kvstore.KVStoreService/Get",
   "/kvstore.KVStoreService/Remove",
+  "/kvstore.KVStoreService/Ping",
+  "/kvstore.KVStoreService/Scan",
+  "/kvstore.KVStoreService/Snapshot",
+  "/kvstore.KVStoreService/Metrics",
+  "/kvstore.KVStoreService/Reconfigure",
+  "/kvstore.KVStoreService/Debug",
+  "/kvstore.KVStoreService/Repair",
+  "/kvstore.KVStoreService/Reserve",
 };
 
 std::unique_ptr< KVStoreService::Stub> KVStoreService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -38,6 +46,14 @@ KVStoreService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& cha
   : channel_(channel), rpcmethod_Put_(KVStoreService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_Get_(KVStoreService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_Remove_(KVStoreService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Ping_(KVStoreService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Scan_(KVStoreService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::SERVER_STREAMING, channel)
+  , rpcmethod_Snapshot_(KVStoreService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Metrics_(KVStoreService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Reconfigure_(KVStoreService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Debug_(KVStoreService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Repair_(KVStoreService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Reserve_(KVStoreService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status KVStoreService::Stub::Put(::grpc::ClientContext* context, const ::kvstore::PutRequest& request, ::kvstore::PutResponse* response) {
@@ -109,6 +125,183 @@ void KVStoreService::Stub::async::Remove(::grpc::ClientContext* context, const :
   return result;
 }
 
+::grpc::Status KVStoreService::Stub::Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::PingResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::PingRequest, ::kvstore::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Ping_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::PingRequest, ::kvstore::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Ping_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Ping_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>* KVStoreService::Stub::PrepareAsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::PingResponse, ::kvstore::PingRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Ping_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>* KVStoreService::Stub::AsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncPingRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::ClientReader< ::kvstore::Record>* KVStoreService::Stub::ScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request) {
+  return ::grpc::internal::ClientReaderFactory< ::kvstore::Record>::Create(channel_.get(), rpcmethod_Scan_, context, request);
+}
+
+void KVStoreService::Stub::async::Scan(::grpc::ClientContext* context, const ::kvstore::ScanRequest* request, ::grpc::ClientReadReactor< ::kvstore::Record>* reactor) {
+  ::grpc::internal::ClientCallbackReaderFactory< ::kvstore::Record>::Create(stub_->channel_.get(), stub_->rpcmethod_Scan_, context, request, reactor);
+}
+
+::grpc::ClientAsyncReader< ::kvstore::Record>* KVStoreService::Stub::AsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+  return ::grpc::internal::ClientAsyncReaderFactory< ::kvstore::Record>::Create(channel_.get(), cq, rpcmethod_Scan_, context, request, true, tag);
+}
+
+::grpc::ClientAsyncReader< ::kvstore::Record>* KVStoreService::Stub::PrepareAsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncReaderFactory< ::kvstore::Record>::Create(channel_.get(), cq, rpcmethod_Scan_, context, request, false, nullptr);
+}
+
+::grpc::Status KVStoreService::Stub::Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::kvstore::AdminResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::SnapshotRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Snapshot_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::SnapshotRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Snapshot_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Snapshot_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::PrepareAsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::AdminResponse, ::kvstore::SnapshotRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Snapshot_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::AsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncSnapshotRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status KVStoreService::Stub::Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::kvstore::MetricsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::MetricsRequest, ::kvstore::MetricsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Metrics_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::MetricsRequest, ::kvstore::MetricsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Metrics_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Metrics_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>* KVStoreService::Stub::PrepareAsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::MetricsResponse, ::kvstore::MetricsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Metrics_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>* KVStoreService::Stub::AsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncMetricsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status KVStoreService::Stub::Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::kvstore::AdminResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Reconfigure_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Reconfigure_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Reconfigure_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::PrepareAsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::AdminResponse, ::kvstore::ReconfigureRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Reconfigure_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::AsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReconfigureRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status KVStoreService::Stub::Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::kvstore::DebugResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::DebugRequest, ::kvstore::DebugResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Debug_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::DebugRequest, ::kvstore::DebugResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Debug_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Debug_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>* KVStoreService::Stub::PrepareAsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::DebugResponse, ::kvstore::DebugRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Debug_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>* KVStoreService::Stub::AsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncDebugRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status KVStoreService::Stub::Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::AdminResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::PingRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Repair_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::PingRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Repair_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Repair_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::PrepareAsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::AdminResponse, ::kvstore::PingRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Repair_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* KVStoreService::Stub::AsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRepairRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status KVStoreService::Stub::Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::Version* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::kvstore::PingRequest, ::kvstore::Version, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Reserve_, context, request, response);
+}
+
+void KVStoreService::Stub::async::Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::kvstore::PingRequest, ::kvstore::Version, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Reserve_, context, request, response, std::move(f));
+}
+
+void KVStoreService::Stub::async::Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Reserve_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::Version>* KVStoreService::Stub::PrepareAsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::kvstore::Version, ::kvstore::PingRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Reserve_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::kvstore::Version>* KVStoreService::Stub::AsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReserveRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 KVStoreService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       KVStoreService_method_names[0],
@@ -140,6 +333,86 @@ KVStoreService::Service::Service() {
              ::kvstore::RemoveResponse* resp) {
                return service->Remove(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::PingRequest, ::kvstore::PingResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::PingRequest* req,
+             ::kvstore::PingResponse* resp) {
+               return service->Ping(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[4],
+      ::grpc::internal::RpcMethod::SERVER_STREAMING,
+      new ::grpc::internal::ServerStreamingHandler< KVStoreService::Service, ::kvstore::ScanRequest, ::kvstore::Record>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::ScanRequest* req,
+             ::grpc::ServerWriter<::kvstore::Record>* writer) {
+               return service->Scan(ctx, req, writer);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[5],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::SnapshotRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::SnapshotRequest* req,
+             ::kvstore::AdminResponse* resp) {
+               return service->Snapshot(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[6],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::MetricsRequest, ::kvstore::MetricsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::MetricsRequest* req,
+             ::kvstore::MetricsResponse* resp) {
+               return service->Metrics(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[7],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::ReconfigureRequest* req,
+             ::kvstore::AdminResponse* resp) {
+               return service->Reconfigure(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::DebugRequest, ::kvstore::DebugResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::DebugRequest* req,
+             ::kvstore::DebugResponse* resp) {
+               return service->Debug(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[9],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::PingRequest, ::kvstore::AdminResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::PingRequest* req,
+             ::kvstore::AdminResponse* resp) {
+               return service->Repair(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      KVStoreService_method_names[10],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< KVStoreService::Service, ::kvstore::PingRequest, ::kvstore::Version, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](KVStoreService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::kvstore::PingRequest* req,
+             ::kvstore::Version* resp) {
+               return service->Reserve(ctx, req, resp);
+             }, this)));
 }
 
 KVStoreService::Service::~Service() {
@@ -160,6 +433,62 @@ KVStoreService::Service::~Service() {
 }
 
 ::grpc::Status KVStoreService::Service::Remove(::grpc::ServerContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Ping(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Scan(::grpc::ServerContext* context, const ::kvstore::ScanRequest* request, ::grpc::ServerWriter< ::kvstore::Record>* writer) {
+  (void) context;
+  (void) request;
+  (void) writer;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Snapshot(::grpc::ServerContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Metrics(::grpc::ServerContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Reconfigure(::grpc::ServerContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Debug(::grpc::ServerContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Repair(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status KVStoreService::Service::Reserve(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response) {
   (void) context;
   (void) request;
   (void) response;

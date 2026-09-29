@@ -1,44 +1,40 @@
 syntax = "proto3";
-
 package kvstore;
-
+message Version { uint64 physical_ms = 1; uint64 logical = 2; string writer = 3; }
+message Record { string key = 1; string value = 2; Version version = 3; bool tombstone = 4; }
 message PutRequest {
-    string key = 1;
-    string value = 2;
-    uint64 timestamp = 3;
+  string key = 1; string value = 2; uint64 timestamp = 3;
+  Version version = 4; bool tombstone = 5;
 }
-
-message PutResponse {
-    bool success = 1;
-}
-
-message GetRequest {
-    string key = 1;
-}
-
+enum WriteStatus { APPLIED = 0; DUPLICATE = 1; STALE = 2; CONFLICT = 3; QUORUM_FAILED = 4; }
+message PutResponse { bool success = 1; WriteStatus result = 2; Version current_version = 3; }
+message GetRequest { string key = 1; }
 message GetResponse {
-    bool found = 1;
-    string value = 2;
-    uint64 timestamp = 3;
+  bool found = 1; string value = 2; uint64 timestamp = 3;
+  Version version = 4; bool tombstone = 5; bool quorum_ok = 6;
 }
-
-message RemoveRequest {
-    string key = 1;
-}
-
-message RemoveResponse {
-    bool removed = 1;
-}
-
-// Stage 7: a trivial RPC used purely for liveness checking.
+message RemoveRequest { string key = 1; Version version = 2; }
+message RemoveResponse { bool removed = 1; Version version = 2; }
 message PingRequest {}
-message PingResponse {
-    bool alive = 1;
-}
-
+message PingResponse { bool alive = 1; }
+message ScanRequest {}
+message SnapshotRequest {}
+message AdminResponse { bool success = 1; string detail = 2; }
+message MetricsRequest {}
+message MetricsResponse { string text = 1; }
+message ReconfigureRequest { repeated string nodes = 1; uint64 epoch = 2; }
+message DebugRequest { string key = 1; }
+message DebugResponse { repeated string replicas = 1; uint64 epoch = 2; }
 service KVStoreService {
-    rpc Put(PutRequest) returns (PutResponse);
-    rpc Get(GetRequest) returns (GetResponse);
-    rpc Remove(RemoveRequest) returns (RemoveResponse);
-    rpc Ping(PingRequest) returns (PingResponse);
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Remove(RemoveRequest) returns (RemoveResponse);
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Scan(ScanRequest) returns (stream Record);
+  rpc Snapshot(SnapshotRequest) returns (AdminResponse);
+  rpc Metrics(MetricsRequest) returns (MetricsResponse);
+  rpc Reconfigure(ReconfigureRequest) returns (AdminResponse);
+  rpc Debug(DebugRequest) returns (DebugResponse);
+  rpc Repair(PingRequest) returns (AdminResponse);
+  rpc Reserve(PingRequest) returns (Version);
 }

@@ -1,84 +1,27 @@
+#include "node_service.hpp"
+#include "metrics_http.hpp"
+#include "runtime.hpp"
+#include "shutdown.hpp"
 #include <iostream>
-#include <memory>
-#include <string>
-#include <cstdlib>
-
-#include <grpcpp/grpcpp.h>
-#include "kvstore.grpc.pb.h"
-#include "kv_store.hpp"
-
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::Status;
-
-using kvstore::KVStoreService;
-using kvstore::PutRequest;
-using kvstore::PutResponse;
-using kvstore::GetRequest;
-using kvstore::GetResponse;
-using kvstore::RemoveRequest;
-using kvstore::RemoveResponse;
-using kvstore::PingRequest;
-using kvstore::PingResponse;
-
-class KVStoreServiceImpl final : public KVStoreService::Service {
-public:
-    Status Put(ServerContext* context, const PutRequest* request,
-               PutResponse* response) override {
-        store_.put(request->key(), request->value(), request->timestamp());
-        response->set_success(true);
-        return Status::OK;
-    }
-
-    Status Get(ServerContext* context, const GetRequest* request,
-               GetResponse* response) override {
-        auto result = store_.get(request->key());
-        if (result.has_value()) {
-            response->set_found(true);
-            response->set_value(result->value);
-            response->set_timestamp(result->timestamp);
-        } else {
-            response->set_found(false);
-        }
-        return Status::OK;
-    }
-
-    Status Remove(ServerContext* context, const RemoveRequest* request,
-                  RemoveResponse* response) override {
-        bool removed = store_.remove(request->key());
-        response->set_removed(removed);
-        return Status::OK;
-    }
-
-    Status Ping(ServerContext* context, const PingRequest* request,
-                PingResponse* response) override {
-        response->set_alive(true);
-        return Status::OK;
-    }
-
-private:
-    KVStore store_;
-};
-
-void RunServer(const std::string& server_address) {
-    KVStoreServiceImpl service;
-
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service);
-
-    std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "KV server listening on " << server_address << std::endl;
-    server->Wait();
-}
-
 int main(int argc, char** argv) {
-    int port = 50051;
-    if (argc > 1) {
-        port = std::atoi(argv[1]);
-    }
-    std::string server_address = "0.0.0.0:" + std::to_string(port);
-    RunServer(server_address);
-    return 0;
+    try {
+        BlockShutdownSignals();
+        Arguments args(argc, argv);
+        int port = args.Int("port", args.positional.empty() ? 50051 : std::stoi(args.positional[0]));
+        if (port < 1 || port > 65535) throw std::invalid_argument("invalid port");
+        auto durability = ParseDurability(args.Get("durability", "always"));
+        int snapshots = args.Int("snapshot-every", 10000), fail_every = args.Int("fail-every", 0);
+        if (snapshots < 0 || fail_every < 0) throw std::invalid_argument("negative snapshot/fault setting");
+        NodeService service(args.Get("data", ".data/node-" + std::to_string(port)), durability, snapshots);
+        service.delay_ms = args.Int("delay-ms", 0); service.fail_every = fail_every;
+        if (service.delay_ms < 0) throw std::invalid_argument("negative delay");
+        MetricsHttp metrics(args.Int("metrics-port", 0), [&] { return service.MetricsText(); });
+        grpc::ServerBuilder builder;
+        builder.AddListeningPort("0.0.0.0:" + std::to_string(port), grpc::InsecureServerCredentials());
+        builder.RegisterService(&service);
+        auto server = builder.BuildAndStart();
+        if (!server) throw std::runtime_error("failed to bind storage port");
+        std::cout << "Storage node listening on :" << port << " durability=" << args.Get("durability", "always") << std::endl;
+        WaitWithSignals(server.get());
+    } catch (const std::exception& e) { std::cerr << e.what() << "\n"; return 1; }
 }

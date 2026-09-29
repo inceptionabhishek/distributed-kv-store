@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <stdexcept>
 
 #include "simple_hash.hpp"
 
@@ -16,11 +17,16 @@
 class ConsistentHashRing {
 public:
     explicit ConsistentHashRing(int virtual_nodes_per_node = 10)
-        : virtual_nodes_per_node_(virtual_nodes_per_node) {}
+        : virtual_nodes_per_node_(virtual_nodes_per_node) {
+        if (virtual_nodes_per_node <= 0) throw std::invalid_argument("virtual nodes must be positive");
+    }
 
     void AddNode(const std::string& node_address) {
+        if (node_address.empty()) throw std::invalid_argument("empty node address");
+        if (physical_nodes_.count(node_address)) return;
         for (int i = 0; i < virtual_nodes_per_node_; ++i) {
             uint64_t point = ring_hash(node_address + "#" + std::to_string(i));
+            if (ring_.count(point)) throw std::runtime_error("virtual point hash collision");
             ring_[point] = node_address;
         }
         physical_nodes_.insert(node_address);

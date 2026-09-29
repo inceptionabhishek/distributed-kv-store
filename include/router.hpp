@@ -1,210 +1,89 @@
 #pragma once
-
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <chrono>
-#include <mutex>
-
-#include <grpcpp/grpcpp.h>
-#include "kvstore.grpc.pb.h"
 #include "consistent_hash_ring.hpp"
 #include "failure_detector.hpp"
+#include "hint_queue.hpp"
+#include "metrics.hpp"
+#include "thread_pool.hpp"
+#include "wire.hpp"
+#include <condition_variable>
+#include <map>
+#include <shared_mutex>
 
-struct Hint {
-    std::string key;
-    std::string value;
-    uint64_t timestamp;
-    std::string intended_node;
+struct RouterOptions {
+    int virtual_nodes = 100, replication_factor = 3, write_quorum = 2, read_quorum = 2;
+    size_t workers = 24, queue_capacity = 4096;
+    std::chrono::milliseconds operation_timeout{750}, replica_timeout{500}, repair_interval{5000};
+    std::string state_directory;
+    uint64_t hint_ttl_ms = 86400000;
+    bool verbose = false, sequential = false; // sequential mode is a benchmark baseline
 };
-
+enum class ReadStatus { Found, NotFound, Unavailable, Conflict };
+struct ReadResult {
+    ReadStatus status = ReadStatus::Unavailable;
+    std::optional<TimestampedValue> data;
+};
+struct WriteResult {
+    bool success = false;
+    kvstore::WriteStatus status = kvstore::QUORUM_FAILED;
+    Version version;
+};
 class Router {
 public:
-    explicit Router(const std::vector<std::string>& node_addresses,
-                     int virtual_nodes = 10,
-                     int replication_factor = 3,
-                     int write_quorum = 2,
-                     int read_quorum = 2,
-                     bool verbose = true)
-        : ring_(virtual_nodes),
-          replication_factor_(replication_factor),
-          write_quorum_(write_quorum),
-          read_quorum_(read_quorum),
-          failure_detector_(node_addresses),
-          verbose_(verbose) {
-        for (const auto& addr : node_addresses) {
-            ring_.AddNode(addr);
-            stubs_[addr] = kvstore::KVStoreService::NewStub(
-                grpc::CreateChannel(addr, grpc::InsecureChannelCredentials()));
-        }
-        failure_detector_.Start();
-    }
-
-    ~Router() {
-        failure_detector_.Stop();
-    }
-
-    std::vector<std::string> ReplicaAddressesFor(const std::string& key) const {
-        return ring_.GetNodesForKey(key, replication_factor_);
-    }
-
-    bool Put(const std::string& key, const std::string& value) {
-        auto replicas = ReplicaAddressesFor(key);
-        if (static_cast<int>(replicas.size()) < write_quorum_) {
-            if (verbose_) std::cerr << "Put failed for key '" << key << "': not enough nodes for write quorum" << std::endl;
-            return false;
-        }
-
-        uint64_t timestamp = NowMillis();
-
-        if (verbose_) {
-            std::cout << "PUT   " << key << " (ts=" << timestamp << ") -> replicas: [";
-            for (size_t i = 0; i < replicas.size(); ++i) {
-                std::cout << replicas[i] << (i + 1 < replicas.size() ? ", " : "");
-            }
-            std::cout << "]" << std::endl;
-        }
-
-        int successes = 0;
-        for (const auto& addr : replicas) {
-            if (!failure_detector_.IsAlive(addr)) {
-                if (verbose_) std::cout << "  " << addr << " known DOWN, skipping RPC, storing hint" << std::endl;
-                StoreHint(addr, {key, value, timestamp, addr});
-                continue;
-            }
-
-            kvstore::PutRequest request;
-            request.set_key(key);
-            request.set_value(value);
-            request.set_timestamp(timestamp);
-            kvstore::PutResponse response;
-            grpc::ClientContext context;
-
-            grpc::Status status = stubs_.at(addr)->Put(&context, request, &response);
-            if (status.ok() && response.success()) {
-                successes++;
-            } else {
-                if (verbose_) std::cerr << "  Put to replica " << addr << " FAILED: " << status.error_message() << " -- storing hint" << std::endl;
-                StoreHint(addr, {key, value, timestamp, addr});
-            }
-        }
-
-        bool ok = successes >= write_quorum_;
-        if (verbose_) {
-            std::cout << "  " << successes << "/" << replicas.size() << " replicas acked "
-                       << "(needed " << write_quorum_ << ") -> " << (ok ? "SUCCESS" : "FAILED") << std::endl;
-        }
-        return ok;
-    }
-
-    bool Get(const std::string& key, std::string* out_value) {
-        auto replicas = ReplicaAddressesFor(key);
-        if (static_cast<int>(replicas.size()) < read_quorum_) {
-            if (verbose_) std::cerr << "Get failed for key '" << key << "': not enough nodes for read quorum" << std::endl;
-            return false;
-        }
-
-        struct Reply { bool found; std::string value; uint64_t timestamp; };
-        std::vector<Reply> replies;
-
-        for (const auto& addr : replicas) {
-            if (!failure_detector_.IsAlive(addr)) {
-                if (verbose_) std::cout << "  " << addr << " known DOWN, skipping" << std::endl;
-                continue;
-            }
-
-            kvstore::GetRequest request;
-            request.set_key(key);
-            kvstore::GetResponse response;
-            grpc::ClientContext context;
-
-            grpc::Status status = stubs_.at(addr)->Get(&context, request, &response);
-            if (!status.ok()) {
-                if (verbose_) std::cerr << "  Get from replica " << addr << " FAILED: " << status.error_message() << std::endl;
-                continue;
-            }
-            replies.push_back({response.found(), response.value(), response.timestamp()});
-            if (static_cast<int>(replies.size()) >= read_quorum_) {
-                break;
-            }
-        }
-
-        if (static_cast<int>(replies.size()) < read_quorum_) {
-            if (verbose_) std::cerr << "Get failed for key '" << key << "': only got " << replies.size() << "/" << read_quorum_ << " needed replies" << std::endl;
-            return false;
-        }
-
-        const Reply* best = nullptr;
-        for (const auto& r : replies) {
-            if (!r.found) continue;
-            if (best == nullptr || r.timestamp > best->timestamp) {
-                best = &r;
-            }
-        }
-
-        if (verbose_) {
-            std::cout << "GET   " << key << " -> queried " << replies.size()
-                       << " replicas (needed " << read_quorum_ << ")" << std::endl;
-        }
-
-        if (best == nullptr) {
-            return false;
-        }
-        *out_value = best->value;
-        return true;
-    }
-
-    void ReplayHintsForRecoveredNodes() {
-        std::lock_guard<std::mutex> lock(hints_mutex_);
-        for (auto it = hints_.begin(); it != hints_.end(); ) {
-            const std::string& node = it->first;
-            if (failure_detector_.IsAlive(node)) {
-                std::vector<Hint>& pending = it->second;
-                if (verbose_) {
-                    std::cout << "[hinted-handoff] " << node << " is back UP, replaying "
-                               << pending.size() << " hint(s)" << std::endl;
-                }
-                for (const auto& hint : pending) {
-                    kvstore::PutRequest request;
-                    request.set_key(hint.key);
-                    request.set_value(hint.value);
-                    request.set_timestamp(hint.timestamp);
-                    kvstore::PutResponse response;
-                    grpc::ClientContext context;
-                    grpc::Status status = stubs_.at(node)->Put(&context, request, &response);
-                    if (verbose_) {
-                        std::cout << "  replayed key='" << hint.key << "' to " << node
-                                   << " -> " << (status.ok() ? "ok" : "FAILED") << std::endl;
-                    }
-                }
-                it = hints_.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
+    Router(const std::vector<std::string>& nodes, RouterOptions options);
+    explicit Router(const std::vector<std::string>& nodes, int virtual_nodes = 100,
+                    int replication_factor = 3, int write_quorum = 2, int read_quorum = 2,
+                    bool verbose = true);
+    ~Router();
+    Router(const Router&) = delete;
+    Router& operator=(const Router&) = delete;
+    Version NewVersion();
+    Entry NewEntry(const std::string& key, const std::string& value, bool tombstone = false);
+    WriteResult Mutate(const Entry& entry,
+        std::chrono::system_clock::time_point parent_deadline = std::chrono::system_clock::time_point::max());
+    bool Put(const std::string& key, const std::string& value);
+    bool Remove(const std::string& key);
+    ReadResult Read(const std::string& key,
+        std::chrono::system_clock::time_point parent_deadline = std::chrono::system_clock::time_point::max());
+    bool Get(const std::string& key, std::string* out);
+    std::vector<std::string> ReplicaAddressesFor(const std::string& key) const;
+    void ReplayHintsForRecoveredNodes();
+    bool RepairOnce();
+    bool Reconfigure(const std::vector<std::string>& nodes, uint64_t epoch, std::string* error);
+    uint64_t Epoch() const;
+    size_t PendingHints() const { return hints_.size(); }
+    std::string MetricsText() const;
+    void SnapshotHints() { hints_.Snapshot(); }
+    void Drain() { pool_.Drain(); }
 private:
-    static uint64_t NowMillis() {
-        using namespace std::chrono;
-        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    }
-
-    void StoreHint(const std::string& dead_node, Hint hint) {
-        std::lock_guard<std::mutex> lock(hints_mutex_);
-        hints_[dead_node].push_back(std::move(hint));
-    }
-
-    ConsistentHashRing ring_;
-    int replication_factor_;
-    int write_quorum_;
-    int read_quorum_;
-    FailureDetector failure_detector_;
-    bool verbose_;
-    std::unordered_map<std::string, std::unique_ptr<kvstore::KVStoreService::Stub>> stubs_;
-
-    std::mutex hints_mutex_;
-    std::unordered_map<std::string, std::vector<Hint>> hints_;
+    using Stub = kvstore::KVStoreService::Stub;
+    struct Topology {
+        explicit Topology(int virtual_nodes) : ring(virtual_nodes) {}
+        ConsistentHashRing ring;
+        std::vector<std::string> nodes;
+        std::map<std::string, std::shared_ptr<Stub>> stubs;
+        std::shared_ptr<FailureDetector> detector;
+        uint64_t epoch = 1;
+    };
+    std::shared_ptr<Topology> BuildTopology(const std::vector<std::string>& nodes, uint64_t epoch);
+    bool Scan(const std::shared_ptr<Topology>& topology, std::map<std::string, Entry>& union_data, bool strict);
+    bool RepairLocked(const std::shared_ptr<Topology>& topology);
+    void ReplayLocked(const std::shared_ptr<Topology>& topology);
+    void Background();
+    void SaveMembership(const Topology& topology);
+    void RecordRPC(const grpc::Status& status);
+    void Log(const char* operation, const std::string& key, bool success, const Version* version = nullptr) const;
+    RouterOptions options_;
+    mutable std::shared_mutex topology_mutex_;
+    std::shared_ptr<Topology> topology_;
+    HintQueue hints_;
+    HybridClock clock_;
+    std::mutex clock_mutex_;
+    std::unique_ptr<Journal> clock_journal_, membership_journal_;
+    size_t clock_records_ = 0;
+    Metrics metrics_;
+    ThreadPool pool_;
+    std::atomic<bool> stop_{false};
+    std::mutex background_mutex_, replay_mutex_;
+    std::condition_variable background_wake_;
+    std::thread background_;
 };

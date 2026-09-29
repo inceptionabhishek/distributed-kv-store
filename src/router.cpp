@@ -1,57 +1,38 @@
+#include "gateway_service.hpp"
+#include "metrics_http.hpp"
+#include "runtime.hpp"
+#include "shutdown.hpp"
 #include <iostream>
-#include <vector>
-#include <string>
-#include <chrono>
-#include <thread>
-
-#include "router.hpp"
-
-int main() {
-    std::vector<std::string> nodes = {
-        "localhost:50051",
-        "localhost:50052",
-        "localhost:50053",
-        "localhost:50054"
-    };
-
-    Router router(nodes, /*virtual_nodes=*/10, /*replication_factor=*/3,
-                  /*write_quorum=*/2, /*read_quorum=*/2);
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(600));
-
-    std::vector<std::pair<std::string, std::string>> data = {
-        {"user:1", "abhishek"},
-        {"user:2", "priya"},
-        {"user:3", "rahul"},
-        {"user:4", "meera"},
-        {"user:5", "arjun"},
-        {"order:100", "shipped"},
-        {"order:101", "pending"},
-        {"order:102", "delivered"},
-    };
-
-    std::cout << "--- writing ---" << std::endl;
-    int put_failures = 0;
-    for (const auto& [key, value] : data) {
-        if (!router.Put(key, value)) {
-            put_failures++;
+int main(int argc, char** argv) {
+    try {
+        BlockShutdownSignals();
+        Arguments args(argc, argv);
+        RouterOptions options;
+        options.state_directory = args.Get("data", ".data/router");
+        options.verbose = args.Int("verbose", 1) != 0;
+        options.replication_factor = args.Int("replicas", 3);
+        options.write_quorum = args.Int("write-quorum", 2); options.read_quorum = args.Int("read-quorum", 2);
+        options.operation_timeout = std::chrono::milliseconds(args.Int("timeout-ms", 750));
+        options.replica_timeout = std::chrono::milliseconds(args.Int("replica-timeout-ms", 500));
+        options.repair_interval = std::chrono::milliseconds(args.Int("repair-ms", 5000));
+        Router router(SplitNodes(args.Get("nodes", DefaultNodes())), options);
+        if (!args.flags.count("serve")) {
+            bool ok = router.Put("user:1", "abhishek");
+            std::string value; ok = router.Get("user:1", &value) && value == "abhishek" && ok;
+            ok = router.Remove("user:1") && ok;
+            auto read = router.Read("user:1"); ok = read.status == ReadStatus::NotFound && ok;
+            router.Drain();
+            std::cout << (ok ? "PASS" : "FAIL") << "\n"; return ok ? 0 : 1;
         }
-        router.ReplayHintsForRecoveredNodes();
-    }
-
-    std::cout << "\n--- reading back ---" << std::endl;
-    int mismatches = 0;
-    for (const auto& [key, expected_value] : data) {
-        std::string actual_value;
-        bool found = router.Get(key, &actual_value);
-        if (!found || actual_value != expected_value) {
-            std::cout << "MISMATCH on key " << key << std::endl;
-            mismatches++;
-        }
-    }
-
-    std::cout << "\nput_failures=" << put_failures << " mismatches=" << mismatches << std::endl;
-    std::cout << (put_failures == 0 && mismatches == 0 ? "PASS" : "FAIL") << std::endl;
-
-    return 0;
+        int port = args.Int("serve", 50050);
+        if (port < 1 || port > 65535) throw std::invalid_argument("invalid port");
+        GatewayService service(router);
+        MetricsHttp metrics(args.Int("metrics-port", 9090), [&] { return router.MetricsText(); });
+        grpc::ServerBuilder builder;
+        builder.AddListeningPort("0.0.0.0:" + std::to_string(port), grpc::InsecureServerCredentials());
+        builder.RegisterService(&service); auto server = builder.BuildAndStart();
+        if (!server) throw std::runtime_error("failed to bind coordinator port");
+        std::cout << "Coordinator listening on :" << port << " epoch=" << router.Epoch() << std::endl;
+        WaitWithSignals(server.get());
+    } catch (const std::exception& e) { std::cerr << e.what() << "\n"; return 1; }
 }

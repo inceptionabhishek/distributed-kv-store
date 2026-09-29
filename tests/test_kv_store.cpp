@@ -37,13 +37,13 @@ TEST(KVStoreTest, OlderTimestampArrivingLateIsIgnored) {
     EXPECT_EQ(result->timestamp, 200u);
 }
 
-TEST(KVStoreTest, EqualTimestampOverwrites) {
+TEST(KVStoreTest, EqualVersionDifferentPayloadIsRejected) {
     KVStore store;
     store.put("key1", "first", 100);
-    store.put("key1", "second", 100);
+    EXPECT_EQ(store.put("key1", "second", 100), ApplyResult::Conflict);
     auto result = store.get("key1");
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->value, "second");
+    EXPECT_EQ(result->value, "first");
 }
 
 TEST(KVStoreTest, PutEmptyStringValueIsDistinctFromMissing) {

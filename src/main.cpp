@@ -15,7 +15,7 @@ int main() {
         threads.emplace_back([&store, t, puts_per_thread]() {
             for (int i = 0; i < puts_per_thread; ++i) {
                 std::string key = "thread" + std::to_string(t) + "_key" + std::to_string(i);
-                store.put(key, "value" + std::to_string(i));
+                store.put(key, "value" + std::to_string(i), static_cast<uint64_t>(i));
             }
         });
     }

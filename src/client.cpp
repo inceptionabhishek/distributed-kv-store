@@ -36,6 +36,7 @@ public:
 
         PutResponse response;
         ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(750));
 
         Status status = stub_->Put(&context, request, &response);
         if (!status.ok()) {
@@ -51,6 +52,7 @@ public:
 
         GetResponse response;
         ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(750));
 
         Status status = stub_->Get(&context, request, &response);
         if (!status.ok()) {
@@ -69,6 +71,7 @@ public:
 
         RemoveResponse response;
         ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(750));
 
         Status status = stub_->Remove(&context, request, &response);
         if (!status.ok()) {

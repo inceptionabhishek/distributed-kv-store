@@ -57,6 +57,64 @@ class KVStoreService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::RemoveResponse>> PrepareAsyncRemove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::RemoveResponse>>(PrepareAsyncRemoveRaw(context, request, cq));
     }
+    virtual ::grpc::Status Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::PingResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>> AsyncPing(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>>(AsyncPingRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>> PrepareAsyncPing(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>>(PrepareAsyncPingRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientReaderInterface< ::kvstore::Record>> Scan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReaderInterface< ::kvstore::Record>>(ScanRaw(context, request));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>> AsyncScan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>>(AsyncScanRaw(context, request, cq, tag));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>> PrepareAsyncScan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>>(PrepareAsyncScanRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::kvstore::AdminResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> AsyncSnapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(AsyncSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> PrepareAsyncSnapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(PrepareAsyncSnapshotRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::kvstore::MetricsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>> AsyncMetrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>>(AsyncMetricsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>> PrepareAsyncMetrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>>(PrepareAsyncMetricsRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::kvstore::AdminResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> AsyncReconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(AsyncReconfigureRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> PrepareAsyncReconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(PrepareAsyncReconfigureRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::kvstore::DebugResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>> AsyncDebug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>>(AsyncDebugRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>> PrepareAsyncDebug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>>(PrepareAsyncDebugRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::AdminResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> AsyncRepair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(AsyncRepairRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>> PrepareAsyncRepair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>>(PrepareAsyncRepairRaw(context, request, cq));
+    }
+    virtual ::grpc::Status Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::Version* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>> AsyncReserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>>(AsyncReserveRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>> PrepareAsyncReserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>>(PrepareAsyncReserveRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -66,6 +124,21 @@ class KVStoreService final {
       virtual void Get(::grpc::ClientContext* context, const ::kvstore::GetRequest* request, ::kvstore::GetResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void Remove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Remove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Scan(::grpc::ClientContext* context, const ::kvstore::ScanRequest* request, ::grpc::ClientReadReactor< ::kvstore::Record>* reactor) = 0;
+      virtual void Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -77,6 +150,23 @@ class KVStoreService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::GetResponse>* PrepareAsyncGetRaw(::grpc::ClientContext* context, const ::kvstore::GetRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::RemoveResponse>* AsyncRemoveRaw(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::RemoveResponse>* PrepareAsyncRemoveRaw(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>* AsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::PingResponse>* PrepareAsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderInterface< ::kvstore::Record>* ScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>* AsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::kvstore::Record>* PrepareAsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* AsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* PrepareAsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>* AsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::MetricsResponse>* PrepareAsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* AsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* PrepareAsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>* AsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::DebugResponse>* PrepareAsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* AsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::AdminResponse>* PrepareAsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>* AsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::kvstore::Version>* PrepareAsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -102,6 +192,64 @@ class KVStoreService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::RemoveResponse>> PrepareAsyncRemove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::RemoveResponse>>(PrepareAsyncRemoveRaw(context, request, cq));
     }
+    ::grpc::Status Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::PingResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>> AsyncPing(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>>(AsyncPingRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>> PrepareAsyncPing(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>>(PrepareAsyncPingRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientReader< ::kvstore::Record>> Scan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReader< ::kvstore::Record>>(ScanRaw(context, request));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::kvstore::Record>> AsyncScan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::kvstore::Record>>(AsyncScanRaw(context, request, cq, tag));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::kvstore::Record>> PrepareAsyncScan(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::kvstore::Record>>(PrepareAsyncScanRaw(context, request, cq));
+    }
+    ::grpc::Status Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::kvstore::AdminResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> AsyncSnapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(AsyncSnapshotRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> PrepareAsyncSnapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(PrepareAsyncSnapshotRaw(context, request, cq));
+    }
+    ::grpc::Status Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::kvstore::MetricsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>> AsyncMetrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>>(AsyncMetricsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>> PrepareAsyncMetrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>>(PrepareAsyncMetricsRaw(context, request, cq));
+    }
+    ::grpc::Status Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::kvstore::AdminResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> AsyncReconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(AsyncReconfigureRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> PrepareAsyncReconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(PrepareAsyncReconfigureRaw(context, request, cq));
+    }
+    ::grpc::Status Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::kvstore::DebugResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>> AsyncDebug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>>(AsyncDebugRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>> PrepareAsyncDebug(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>>(PrepareAsyncDebugRaw(context, request, cq));
+    }
+    ::grpc::Status Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::AdminResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> AsyncRepair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(AsyncRepairRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>> PrepareAsyncRepair(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>>(PrepareAsyncRepairRaw(context, request, cq));
+    }
+    ::grpc::Status Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::kvstore::Version* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::Version>> AsyncReserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::Version>>(AsyncReserveRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::Version>> PrepareAsyncReserve(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::kvstore::Version>>(PrepareAsyncReserveRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -111,6 +259,21 @@ class KVStoreService final {
       void Get(::grpc::ClientContext* context, const ::kvstore::GetRequest* request, ::kvstore::GetResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void Remove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response, std::function<void(::grpc::Status)>) override;
       void Remove(::grpc::ClientContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, std::function<void(::grpc::Status)>) override;
+      void Ping(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Scan(::grpc::ClientContext* context, const ::kvstore::ScanRequest* request, ::grpc::ClientReadReactor< ::kvstore::Record>* reactor) override;
+      void Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) override;
+      void Snapshot(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, std::function<void(::grpc::Status)>) override;
+      void Metrics(::grpc::ClientContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) override;
+      void Reconfigure(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, std::function<void(::grpc::Status)>) override;
+      void Debug(::grpc::ClientContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, std::function<void(::grpc::Status)>) override;
+      void Repair(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, std::function<void(::grpc::Status)>) override;
+      void Reserve(::grpc::ClientContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -128,9 +291,34 @@ class KVStoreService final {
     ::grpc::ClientAsyncResponseReader< ::kvstore::GetResponse>* PrepareAsyncGetRaw(::grpc::ClientContext* context, const ::kvstore::GetRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::kvstore::RemoveResponse>* AsyncRemoveRaw(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::kvstore::RemoveResponse>* PrepareAsyncRemoveRaw(::grpc::ClientContext* context, const ::kvstore::RemoveRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>* AsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::PingResponse>* PrepareAsyncPingRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReader< ::kvstore::Record>* ScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request) override;
+    ::grpc::ClientAsyncReader< ::kvstore::Record>* AsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReader< ::kvstore::Record>* PrepareAsyncScanRaw(::grpc::ClientContext* context, const ::kvstore::ScanRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* AsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* PrepareAsyncSnapshotRaw(::grpc::ClientContext* context, const ::kvstore::SnapshotRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>* AsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::MetricsResponse>* PrepareAsyncMetricsRaw(::grpc::ClientContext* context, const ::kvstore::MetricsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* AsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* PrepareAsyncReconfigureRaw(::grpc::ClientContext* context, const ::kvstore::ReconfigureRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>* AsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::DebugResponse>* PrepareAsyncDebugRaw(::grpc::ClientContext* context, const ::kvstore::DebugRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* AsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::AdminResponse>* PrepareAsyncRepairRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::Version>* AsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::kvstore::Version>* PrepareAsyncReserveRaw(::grpc::ClientContext* context, const ::kvstore::PingRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Put_;
     const ::grpc::internal::RpcMethod rpcmethod_Get_;
     const ::grpc::internal::RpcMethod rpcmethod_Remove_;
+    const ::grpc::internal::RpcMethod rpcmethod_Ping_;
+    const ::grpc::internal::RpcMethod rpcmethod_Scan_;
+    const ::grpc::internal::RpcMethod rpcmethod_Snapshot_;
+    const ::grpc::internal::RpcMethod rpcmethod_Metrics_;
+    const ::grpc::internal::RpcMethod rpcmethod_Reconfigure_;
+    const ::grpc::internal::RpcMethod rpcmethod_Debug_;
+    const ::grpc::internal::RpcMethod rpcmethod_Repair_;
+    const ::grpc::internal::RpcMethod rpcmethod_Reserve_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -141,6 +329,14 @@ class KVStoreService final {
     virtual ::grpc::Status Put(::grpc::ServerContext* context, const ::kvstore::PutRequest* request, ::kvstore::PutResponse* response);
     virtual ::grpc::Status Get(::grpc::ServerContext* context, const ::kvstore::GetRequest* request, ::kvstore::GetResponse* response);
     virtual ::grpc::Status Remove(::grpc::ServerContext* context, const ::kvstore::RemoveRequest* request, ::kvstore::RemoveResponse* response);
+    virtual ::grpc::Status Ping(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response);
+    virtual ::grpc::Status Scan(::grpc::ServerContext* context, const ::kvstore::ScanRequest* request, ::grpc::ServerWriter< ::kvstore::Record>* writer);
+    virtual ::grpc::Status Snapshot(::grpc::ServerContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response);
+    virtual ::grpc::Status Metrics(::grpc::ServerContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response);
+    virtual ::grpc::Status Reconfigure(::grpc::ServerContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response);
+    virtual ::grpc::Status Debug(::grpc::ServerContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response);
+    virtual ::grpc::Status Repair(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response);
+    virtual ::grpc::Status Reserve(::grpc::ServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_Put : public BaseClass {
@@ -202,7 +398,167 @@ class KVStoreService final {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_Put<WithAsyncMethod_Get<WithAsyncMethod_Remove<Service > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Ping() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestPing(::grpc::ServerContext* context, ::kvstore::PingRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::PingResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Scan() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestScan(::grpc::ServerContext* context, ::kvstore::ScanRequest* request, ::grpc::ServerAsyncWriter< ::kvstore::Record>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncServerStreaming(4, context, request, writer, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Snapshot() {
+      ::grpc::Service::MarkMethodAsync(5);
+    }
+    ~WithAsyncMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestSnapshot(::grpc::ServerContext* context, ::kvstore::SnapshotRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::AdminResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Metrics() {
+      ::grpc::Service::MarkMethodAsync(6);
+    }
+    ~WithAsyncMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMetrics(::grpc::ServerContext* context, ::kvstore::MetricsRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::MetricsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodAsync(7);
+    }
+    ~WithAsyncMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReconfigure(::grpc::ServerContext* context, ::kvstore::ReconfigureRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::AdminResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Debug() {
+      ::grpc::Service::MarkMethodAsync(8);
+    }
+    ~WithAsyncMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestDebug(::grpc::ServerContext* context, ::kvstore::DebugRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::DebugResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Repair() {
+      ::grpc::Service::MarkMethodAsync(9);
+    }
+    ~WithAsyncMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRepair(::grpc::ServerContext* context, ::kvstore::PingRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::AdminResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_Reserve() {
+      ::grpc::Service::MarkMethodAsync(10);
+    }
+    ~WithAsyncMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReserve(::grpc::ServerContext* context, ::kvstore::PingRequest* request, ::grpc::ServerAsyncResponseWriter< ::kvstore::Version>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_Put<WithAsyncMethod_Get<WithAsyncMethod_Remove<WithAsyncMethod_Ping<WithAsyncMethod_Scan<WithAsyncMethod_Snapshot<WithAsyncMethod_Metrics<WithAsyncMethod_Reconfigure<WithAsyncMethod_Debug<WithAsyncMethod_Repair<WithAsyncMethod_Reserve<Service > > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_Put : public BaseClass {
    private:
@@ -284,7 +640,218 @@ class KVStoreService final {
     virtual ::grpc::ServerUnaryReactor* Remove(
       ::grpc::CallbackServerContext* /*context*/, const ::kvstore::RemoveRequest* /*request*/, ::kvstore::RemoveResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_Put<WithCallbackMethod_Get<WithCallbackMethod_Remove<Service > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Ping() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::PingResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::PingResponse* response) { return this->Ping(context, request, response); }));}
+    void SetMessageAllocatorFor_Ping(
+        ::grpc::MessageAllocator< ::kvstore::PingRequest, ::kvstore::PingResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::PingResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Ping(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Scan() {
+      ::grpc::Service::MarkMethodCallback(4,
+          new ::grpc::internal::CallbackServerStreamingHandler< ::kvstore::ScanRequest, ::kvstore::Record>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::ScanRequest* request) { return this->Scan(context, request); }));
+    }
+    ~WithCallbackMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerWriteReactor< ::kvstore::Record>* Scan(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Snapshot() {
+      ::grpc::Service::MarkMethodCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::SnapshotRequest, ::kvstore::AdminResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::SnapshotRequest* request, ::kvstore::AdminResponse* response) { return this->Snapshot(context, request, response); }));}
+    void SetMessageAllocatorFor_Snapshot(
+        ::grpc::MessageAllocator< ::kvstore::SnapshotRequest, ::kvstore::AdminResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::SnapshotRequest, ::kvstore::AdminResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Snapshot(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Metrics() {
+      ::grpc::Service::MarkMethodCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::MetricsRequest, ::kvstore::MetricsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::MetricsRequest* request, ::kvstore::MetricsResponse* response) { return this->Metrics(context, request, response); }));}
+    void SetMessageAllocatorFor_Metrics(
+        ::grpc::MessageAllocator< ::kvstore::MetricsRequest, ::kvstore::MetricsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(6);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::MetricsRequest, ::kvstore::MetricsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Metrics(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::ReconfigureRequest* request, ::kvstore::AdminResponse* response) { return this->Reconfigure(context, request, response); }));}
+    void SetMessageAllocatorFor_Reconfigure(
+        ::grpc::MessageAllocator< ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(7);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Reconfigure(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Debug() {
+      ::grpc::Service::MarkMethodCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::DebugRequest, ::kvstore::DebugResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::DebugRequest* request, ::kvstore::DebugResponse* response) { return this->Debug(context, request, response); }));}
+    void SetMessageAllocatorFor_Debug(
+        ::grpc::MessageAllocator< ::kvstore::DebugRequest, ::kvstore::DebugResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(8);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::DebugRequest, ::kvstore::DebugResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Debug(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Repair() {
+      ::grpc::Service::MarkMethodCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::AdminResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::AdminResponse* response) { return this->Repair(context, request, response); }));}
+    void SetMessageAllocatorFor_Repair(
+        ::grpc::MessageAllocator< ::kvstore::PingRequest, ::kvstore::AdminResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(9);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::AdminResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Repair(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_Reserve() {
+      ::grpc::Service::MarkMethodCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::Version>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::kvstore::PingRequest* request, ::kvstore::Version* response) { return this->Reserve(context, request, response); }));}
+    void SetMessageAllocatorFor_Reserve(
+        ::grpc::MessageAllocator< ::kvstore::PingRequest, ::kvstore::Version>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(10);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::kvstore::PingRequest, ::kvstore::Version>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Reserve(
+      ::grpc::CallbackServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_Put<WithCallbackMethod_Get<WithCallbackMethod_Remove<WithCallbackMethod_Ping<WithCallbackMethod_Scan<WithCallbackMethod_Snapshot<WithCallbackMethod_Metrics<WithCallbackMethod_Reconfigure<WithCallbackMethod_Debug<WithCallbackMethod_Repair<WithCallbackMethod_Reserve<Service > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_Put : public BaseClass {
@@ -333,6 +900,142 @@ class KVStoreService final {
     }
     // disable synchronous version of this method
     ::grpc::Status Remove(::grpc::ServerContext* /*context*/, const ::kvstore::RemoveRequest* /*request*/, ::kvstore::RemoveResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Ping() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Scan() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Snapshot() {
+      ::grpc::Service::MarkMethodGeneric(5);
+    }
+    ~WithGenericMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Metrics() {
+      ::grpc::Service::MarkMethodGeneric(6);
+    }
+    ~WithGenericMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodGeneric(7);
+    }
+    ~WithGenericMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Debug() {
+      ::grpc::Service::MarkMethodGeneric(8);
+    }
+    ~WithGenericMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Repair() {
+      ::grpc::Service::MarkMethodGeneric(9);
+    }
+    ~WithGenericMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_Reserve() {
+      ::grpc::Service::MarkMethodGeneric(10);
+    }
+    ~WithGenericMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -395,6 +1098,166 @@ class KVStoreService final {
     }
     void RequestRemove(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Ping() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestPing(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Scan() {
+      ::grpc::Service::MarkMethodRaw(4);
+    }
+    ~WithRawMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestScan(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncWriter< ::grpc::ByteBuffer>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncServerStreaming(4, context, request, writer, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Snapshot() {
+      ::grpc::Service::MarkMethodRaw(5);
+    }
+    ~WithRawMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestSnapshot(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Metrics() {
+      ::grpc::Service::MarkMethodRaw(6);
+    }
+    ~WithRawMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMetrics(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodRaw(7);
+    }
+    ~WithRawMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReconfigure(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Debug() {
+      ::grpc::Service::MarkMethodRaw(8);
+    }
+    ~WithRawMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestDebug(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Repair() {
+      ::grpc::Service::MarkMethodRaw(9);
+    }
+    ~WithRawMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRepair(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_Reserve() {
+      ::grpc::Service::MarkMethodRaw(10);
+    }
+    ~WithRawMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReserve(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -461,6 +1324,182 @@ class KVStoreService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Remove(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Ping() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Ping(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Ping(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Scan() {
+      ::grpc::Service::MarkMethodRawCallback(4,
+          new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const::grpc::ByteBuffer* request) { return this->Scan(context, request); }));
+    }
+    ~WithRawCallbackMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerWriteReactor< ::grpc::ByteBuffer>* Scan(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Snapshot() {
+      ::grpc::Service::MarkMethodRawCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Snapshot(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Snapshot(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Metrics() {
+      ::grpc::Service::MarkMethodRawCallback(6,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Metrics(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Metrics(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodRawCallback(7,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Reconfigure(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Reconfigure(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Debug() {
+      ::grpc::Service::MarkMethodRawCallback(8,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Debug(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Debug(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Repair() {
+      ::grpc::Service::MarkMethodRawCallback(9,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Repair(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Repair(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_Reserve() {
+      ::grpc::Service::MarkMethodRawCallback(10,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Reserve(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* Reserve(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -544,9 +1583,225 @@ class KVStoreService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedRemove(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::RemoveRequest,::kvstore::RemoveResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_Put<WithStreamedUnaryMethod_Get<WithStreamedUnaryMethod_Remove<Service > > > StreamedUnaryService;
-  typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_Put<WithStreamedUnaryMethod_Get<WithStreamedUnaryMethod_Remove<Service > > > StreamedService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Ping : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Ping() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::PingRequest, ::kvstore::PingResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::PingRequest, ::kvstore::PingResponse>* streamer) {
+                       return this->StreamedPing(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Ping() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Ping(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::PingResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedPing(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::PingRequest,::kvstore::PingResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Snapshot : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Snapshot() {
+      ::grpc::Service::MarkMethodStreamed(5,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::SnapshotRequest, ::kvstore::AdminResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::SnapshotRequest, ::kvstore::AdminResponse>* streamer) {
+                       return this->StreamedSnapshot(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Snapshot() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Snapshot(::grpc::ServerContext* /*context*/, const ::kvstore::SnapshotRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedSnapshot(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::SnapshotRequest,::kvstore::AdminResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Metrics : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Metrics() {
+      ::grpc::Service::MarkMethodStreamed(6,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::MetricsRequest, ::kvstore::MetricsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::MetricsRequest, ::kvstore::MetricsResponse>* streamer) {
+                       return this->StreamedMetrics(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Metrics() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Metrics(::grpc::ServerContext* /*context*/, const ::kvstore::MetricsRequest* /*request*/, ::kvstore::MetricsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedMetrics(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::MetricsRequest,::kvstore::MetricsResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Reconfigure : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Reconfigure() {
+      ::grpc::Service::MarkMethodStreamed(7,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::ReconfigureRequest, ::kvstore::AdminResponse>* streamer) {
+                       return this->StreamedReconfigure(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Reconfigure() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Reconfigure(::grpc::ServerContext* /*context*/, const ::kvstore::ReconfigureRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedReconfigure(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::ReconfigureRequest,::kvstore::AdminResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Debug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Debug() {
+      ::grpc::Service::MarkMethodStreamed(8,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::DebugRequest, ::kvstore::DebugResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::DebugRequest, ::kvstore::DebugResponse>* streamer) {
+                       return this->StreamedDebug(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Debug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Debug(::grpc::ServerContext* /*context*/, const ::kvstore::DebugRequest* /*request*/, ::kvstore::DebugResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedDebug(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::DebugRequest,::kvstore::DebugResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Repair : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Repair() {
+      ::grpc::Service::MarkMethodStreamed(9,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::PingRequest, ::kvstore::AdminResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::PingRequest, ::kvstore::AdminResponse>* streamer) {
+                       return this->StreamedRepair(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Repair() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Repair(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::AdminResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRepair(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::PingRequest,::kvstore::AdminResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_Reserve : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_Reserve() {
+      ::grpc::Service::MarkMethodStreamed(10,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::kvstore::PingRequest, ::kvstore::Version>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::kvstore::PingRequest, ::kvstore::Version>* streamer) {
+                       return this->StreamedReserve(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_Reserve() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Reserve(::grpc::ServerContext* /*context*/, const ::kvstore::PingRequest* /*request*/, ::kvstore::Version* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedReserve(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::kvstore::PingRequest,::kvstore::Version>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_Put<WithStreamedUnaryMethod_Get<WithStreamedUnaryMethod_Remove<WithStreamedUnaryMethod_Ping<WithStreamedUnaryMethod_Snapshot<WithStreamedUnaryMethod_Metrics<WithStreamedUnaryMethod_Reconfigure<WithStreamedUnaryMethod_Debug<WithStreamedUnaryMethod_Repair<WithStreamedUnaryMethod_Reserve<Service > > > > > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithSplitStreamingMethod_Scan : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithSplitStreamingMethod_Scan() {
+      ::grpc::Service::MarkMethodStreamed(4,
+        new ::grpc::internal::SplitServerStreamingHandler<
+          ::kvstore::ScanRequest, ::kvstore::Record>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerSplitStreamer<
+                     ::kvstore::ScanRequest, ::kvstore::Record>* streamer) {
+                       return this->StreamedScan(context,
+                         streamer);
+                  }));
+    }
+    ~WithSplitStreamingMethod_Scan() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status Scan(::grpc::ServerContext* /*context*/, const ::kvstore::ScanRequest* /*request*/, ::grpc::ServerWriter< ::kvstore::Record>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with split streamed
+    virtual ::grpc::Status StreamedScan(::grpc::ServerContext* context, ::grpc::ServerSplitStreamer< ::kvstore::ScanRequest,::kvstore::Record>* server_split_streamer) = 0;
+  };
+  typedef WithSplitStreamingMethod_Scan<Service > SplitStreamedService;
+  typedef WithStreamedUnaryMethod_Put<WithStreamedUnaryMethod_Get<WithStreamedUnaryMethod_Remove<WithStreamedUnaryMethod_Ping<WithSplitStreamingMethod_Scan<WithStreamedUnaryMethod_Snapshot<WithStreamedUnaryMethod_Metrics<WithStreamedUnaryMethod_Reconfigure<WithStreamedUnaryMethod_Debug<WithStreamedUnaryMethod_Repair<WithStreamedUnaryMethod_Reserve<Service > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace kvstore

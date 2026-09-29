@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
-project(kv_store_stage2 CXX)
+project(distributed_kv_store VERSION 2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(KV_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
+if(KV_SANITIZERS)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+endif()
 
 find_package(Threads REQUIRED)
 
@@ -65,11 +70,16 @@ target_link_libraries(kvstore_proto PUBLIC ${GRPC_LIB} ${PROTOBUF_LIB})
 include_directories(include)
 
 # --- Stage 1 core store (still used, now wrapped by the server) ---
-add_library(kv_core src/kv_store.cpp)
+add_library(kv_core src/kv_store.cpp src/journal.cpp src/hint_queue.cpp)
+target_link_libraries(kv_core PUBLIC Threads::Threads)
+add_library(kv_network src/coordinator.cpp src/node_service.cpp src/metrics_http.cpp)
+target_link_libraries(kv_network PUBLIC kv_core kvstore_proto Threads::Threads)
+target_compile_options(kv_core PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_options(kv_network PRIVATE -Wall -Wextra -Wpedantic)
 
 # --- Server ---
 add_executable(kv_server src/server.cpp)
-target_link_libraries(kv_server PRIVATE kv_core kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} Threads::Threads)
+target_link_libraries(kv_server PRIVATE kv_network)
 
 # --- Client ---
 add_executable(kv_client src/client.cpp)
@@ -77,7 +87,7 @@ target_link_libraries(kv_client PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB
 
 # --- Router (Stage 3/4: hash(key) % N and consistent hashing across nodes) ---
 add_executable(kv_router src/router.cpp)
-target_link_libraries(kv_router PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} Threads::Threads)
+target_link_libraries(kv_router PRIVATE kv_network)
 
 
 # --- Failure detector demo (Stage 7) ---
@@ -87,7 +97,12 @@ target_link_libraries(fd_demo PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} 
 
 # --- Benchmark / load generator ---
 add_executable(benchmark src/benchmark.cpp)
-target_link_libraries(benchmark PRIVATE kvstore_proto ${GRPC_LIB} ${PROTOBUF_LIB} Threads::Threads)
+target_link_libraries(benchmark PRIVATE kv_network)
+add_executable(kvctl src/kvctl.cpp)
+target_link_libraries(kvctl PRIVATE kv_network)
+add_executable(ring_demo src/ring_demo.cpp)
+add_executable(kv_local_demo src/main.cpp)
+target_link_libraries(kv_local_demo PRIVATE kv_core)
 
 # --- Unit tests (GoogleTest) ---
 enable_testing()
@@ -96,9 +111,12 @@ find_package(GTest REQUIRED)
 add_executable(kv_tests
     tests/test_kv_store.cpp
     tests/test_consistent_hash_ring.cpp
-    src/kv_store.cpp
+    tests/test_storage.cpp
+    tests/test_cluster.cpp
 )
-target_link_libraries(kv_tests PRIVATE GTest::gtest GTest::gtest_main Threads::Threads)
+target_link_libraries(kv_tests PRIVATE kv_network GTest::gtest GTest::gtest_main Threads::Threads)
+target_compile_definitions(kv_tests PRIVATE KV_SERVER_PATH="$<TARGET_FILE:kv_server>")
+add_dependencies(kv_tests kv_server)
 
 include(GoogleTest)
 gtest_discover_tests(kv_tests)
